@@ -1,9 +1,10 @@
+
 "use client"
 
 import React, { useState, useEffect } from 'react';
 import { useUser, useFirestore, useCollection, useAuth, useMemoFirebase, setDocumentNonBlocking } from '@/firebase';
 import { collection, query, orderBy, limit, doc } from 'firebase/firestore';
-import { isToday } from 'date-fns';
+import { isToday, parseISO } from 'date-fns';
 import { MoodType, MoodEntry, UserProfile, Assignment, DoctorProfile, DoctorNote } from '@/lib/types';
 import { MoodSelector } from '@/components/mood-selector';
 import { MoodResult } from '@/components/mood-result';
@@ -20,7 +21,7 @@ import { LanguageToggle } from '@/components/language-toggle';
 import { useLanguage } from '@/lib/i18n/context';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { LogOut, Settings, LayoutDashboard, MessageSquare, History as HistoryIcon, Stethoscope, Search } from 'lucide-react';
+import { LogOut, Settings, LayoutDashboard, MessageSquare, History as HistoryIcon, Stethoscope, Search, Loader2 } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 
@@ -39,9 +40,8 @@ export function PatientDashboard({ profile }: { profile: UserProfile }) {
     if (!user || !db) return null;
     return query(collection(db, 'users', user.uid, 'moodEntries'), orderBy('createdAt', 'desc'), limit(30));
   }, [db, user]);
-  const { data: entries } = useCollection<MoodEntry>(moodsQuery);
+  const { data: entries, isLoading: isMoodsLoading } = useCollection<MoodEntry>(moodsQuery);
 
-  // Simplified queries for MVP to avoid index issues
   const assignmentsQuery = useMemoFirebase(() => {
     if (!user || !db) return null;
     return collection(db, 'assignments');
@@ -60,7 +60,10 @@ export function PatientDashboard({ profile }: { profile: UserProfile }) {
   }, [db, user]);
   const { data: rawDoctorNotes } = useCollection<DoctorNote>(notesQuery);
 
-  const todayEntry = entries?.find(e => isToday(new Date(e.date)));
+  // Use string comparison for safer "today" check to avoid timezone shifts
+  const todayStr = new Date().toISOString().split('T')[0];
+  const todayEntry = entries?.find(e => e.date === todayStr);
+  
   const assignments = rawAssignments?.filter(a => a.patientId === user?.uid);
   const myAssignment = assignments?.find(a => a.status === 'accepted');
   const myDoctor = allDoctors?.find(d => d.userId === myAssignment?.doctorId);
@@ -73,37 +76,51 @@ export function PatientDashboard({ profile }: { profile: UserProfile }) {
   }, [profile]);
 
   const handleMoodSelect = async (mood: MoodType) => {
-    if (!user) return;
+    if (!user || !db || isCheckingIn) return;
+    
     setIsCheckingIn(true);
     try {
       const languageMap = { en: 'English', om: 'Afan Oromo', am: 'Amharic' };
-      const guide = await generateMoodGuide({ 
-        mood, 
-        language: (languageMap[language] || 'English') as any
-      });
+      
+      let supportiveMessage = "Thinking of you. Take it one step at a time.";
+      let suggestions = ["Take a deep breath", "Stay hydrated"];
+
+      try {
+        const guide = await generateMoodGuide({ 
+          mood, 
+          language: (languageMap[language] || 'English') as any
+        });
+        supportiveMessage = guide.supportiveMessage;
+        suggestions = guide.suggestions;
+      } catch (aiError) {
+        console.warn("AI Guide generation failed, using fallback:", aiError);
+      }
       
       const moodEntryId = crypto.randomUUID();
-      setDocumentNonBlocking(doc(db, 'users', user.uid, 'moodEntries', moodEntryId), {
+      const docRef = doc(db, 'users', user.uid, 'moodEntries', moodEntryId);
+      
+      setDocumentNonBlocking(docRef, {
         id: moodEntryId,
         userId: user.uid,
         mood,
-        date: new Date().toISOString().split('T')[0],
+        date: todayStr,
         createdAt: new Date().toISOString(),
-        message: guide.supportiveMessage,
-        suggestions: guide.suggestions,
+        message: supportiveMessage,
+        suggestions: suggestions,
         moodGuideMessageId: 'generated-via-ai'
       }, { merge: true });
       
       toast({ title: t.toastCheckedIn });
-    } catch (error) {
-      toast({ variant: "destructive", title: t.toastError });
+    } catch (error: any) {
+      console.error("Check-in failed:", error);
+      toast({ variant: "destructive", title: t.toastError, description: error.message });
     } finally {
       setIsCheckingIn(false);
     }
   };
 
   const handleRequestDoctor = (doctorId: string) => {
-    if (!user) return;
+    if (!user || !db) return;
     const assignmentId = `${user.uid}_${doctorId}`;
     setDocumentNonBlocking(doc(db, 'assignments', assignmentId), {
       id: assignmentId,
@@ -151,18 +168,47 @@ export function PatientDashboard({ profile }: { profile: UserProfile }) {
               <p className="text-muted-foreground">{t.tagline}</p>
             </header>
 
-            {!todayEntry && <ReminderBanner onDismiss={() => {}} />}
+            {!todayEntry && !isMoodsLoading && <ReminderBanner onDismiss={() => {}} />}
 
             <section className="space-y-6">
-              <h3 className="text-xl font-semibold">{t.howFeeling}</h3>
-              <MoodSelector onSelect={handleMoodSelect} selectedMood={todayEntry?.mood} disabled={isCheckingIn} />
-              {isCheckingIn && <Skeleton className="h-48 w-full rounded-2xl" />}
-              {todayEntry && !isCheckingIn && <MoodResult mood={todayEntry.mood} result={{ supportiveMessage: todayEntry.message || "", suggestions: todayEntry.suggestions || [] }} />}
+              <div className="flex items-center justify-between">
+                <h3 className="text-xl font-semibold">{t.howFeeling}</h3>
+                {isCheckingIn && <Loader2 className="h-5 w-5 animate-spin text-primary" />}
+              </div>
+              
+              <MoodSelector 
+                onSelect={handleMoodSelect} 
+                selectedMood={todayEntry?.mood} 
+                disabled={isCheckingIn || !db} 
+              />
+              
+              {isCheckingIn && (
+                <div className="space-y-4 animate-pulse">
+                  <Skeleton className="h-48 w-full rounded-2xl" />
+                </div>
+              )}
+              
+              {todayEntry && !isCheckingIn && (
+                <MoodResult 
+                  mood={todayEntry.mood} 
+                  result={{ 
+                    supportiveMessage: todayEntry.message || "", 
+                    suggestions: todayEntry.suggestions || [] 
+                  }} 
+                />
+              )}
             </section>
 
             <section>
               <h3 className="text-xl font-semibold mb-6">{t.insights}</h3>
-              <MoodInsights entries={entries || []} />
+              {isMoodsLoading ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <Skeleton className="h-32 rounded-2xl" />
+                  <Skeleton className="h-32 rounded-2xl" />
+                </div>
+              ) : (
+                <MoodInsights entries={entries || []} />
+              )}
             </section>
           </TabsContent>
 
@@ -205,17 +251,17 @@ export function PatientDashboard({ profile }: { profile: UserProfile }) {
                   <Input placeholder="Search for a doctor..." className="pl-10" value={searchDoctor} onChange={(e) => setSearchDoctor(e.target.value)} />
                 </div>
                 <div className="grid gap-4">
-                  {allDoctors?.filter(d => d.name.toLowerCase().includes(searchDoctor.toLowerCase())).map(doc => {
-                    const status = assignments?.find(a => a.doctorId === doc.userId)?.status;
+                  {allDoctors?.filter(d => d.name.toLowerCase().includes(searchDoctor.toLowerCase())).map(docItem => {
+                    const status = assignments?.find(a => a.doctorId === docItem.userId)?.status;
                     return (
-                      <Card key={doc.id} className="border-none shadow-sm bg-white">
+                      <Card key={docItem.id} className="border-none shadow-sm bg-white">
                         <CardContent className="p-4 flex items-center justify-between">
                           <div>
-                            <p className="font-semibold">{doc.name}</p>
-                            <p className="text-xs text-muted-foreground">{doc.specialization}</p>
+                            <p className="font-semibold">{docItem.name}</p>
+                            <p className="text-xs text-muted-foreground">{docItem.specialization}</p>
                           </div>
                           <Button 
-                            onClick={() => handleRequestDoctor(doc.userId)} 
+                            onClick={() => handleRequestDoctor(docItem.userId)} 
                             disabled={!!status}
                             variant={status === 'pending' ? 'secondary' : 'default'}
                           >
@@ -225,6 +271,7 @@ export function PatientDashboard({ profile }: { profile: UserProfile }) {
                       </Card>
                     );
                   })}
+                  {allDoctors?.length === 0 && <p className="text-center py-12 text-muted-foreground">No doctors available yet.</p>}
                 </div>
               </div>
             )}

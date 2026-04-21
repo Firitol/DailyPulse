@@ -1,0 +1,349 @@
+{
+  "entities": {
+    "User": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "User",
+      "type": "object",
+      "description": "Represents a user profile within the DailyPulse application, storing core user information and onboarding status.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the User entity."
+        },
+        "name": {
+          "type": "string",
+          "description": "The user's display name."
+        },
+        "email": {
+          "type": "string",
+          "description": "The user's unique email address, used for login and identification.",
+          "format": "email"
+        },
+        "avatarUrl": {
+          "type": "string",
+          "description": "URL to the user's profile avatar image.",
+          "format": "uri"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp indicating when the user account was created.",
+          "format": "date-time"
+        },
+        "onboardingCompleted": {
+          "type": "boolean",
+          "description": "A flag indicating whether the user has completed the initial application onboarding tour."
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "email",
+        "avatarUrl",
+        "createdAt",
+        "onboardingCompleted"
+      ]
+    },
+    "MoodEntry": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "MoodEntry",
+      "type": "object",
+      "description": "Records a user's daily mood selection, along with an optional note and a reference to the displayed mood guide message.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the MoodEntry entity."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to the User who made this mood entry. (Relationship: User 1:N MoodEntry)"
+        },
+        "mood": {
+          "type": "string",
+          "description": "The selected mood for the day (e.g., Happy, Stressed)."
+        },
+        "note": {
+          "type": "string",
+          "description": "An optional short text note accompanying the mood entry."
+        },
+        "date": {
+          "type": "string",
+          "description": "The specific calendar date for which the mood was recorded (YYYY-MM-DD). Used to enforce unique daily entries per user.",
+          "format": "date"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp indicating when this mood entry was actually created or last updated in the system.",
+          "format": "date-time"
+        },
+        "moodGuideMessageId": {
+          "type": "string",
+          "description": "Reference to the specific MoodGuideMessage that was displayed to the user for this mood entry. (Relationship: MoodGuideMessage 1:N MoodEntry)"
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "mood",
+        "date",
+        "createdAt",
+        "moodGuideMessageId"
+      ]
+    },
+    "MoodGuideMessage": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "MoodGuideMessage",
+      "type": "object",
+      "description": "Stores a repository of supportive messages and practical suggestions tailored to specific moods, used for the Daily Mood Guide feature.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the MoodGuideMessage entity."
+        },
+        "mood": {
+          "type": "string",
+          "description": "The specific mood (e.g., 'Stressed', 'Happy') this message and suggestions are associated with."
+        },
+        "message": {
+          "type": "string",
+          "description": "The short, supportive message provided to the user for the associated mood."
+        },
+        "suggestions": {
+          "type": "array",
+          "description": "A list of 1-2 practical, actionable suggestions for the user based on the mood.",
+          "items": {
+            "type": "string"
+          }
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp indicating when this mood guide message was added to the system.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "mood",
+        "message",
+        "suggestions",
+        "createdAt"
+      ]
+    },
+    "Post": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Post",
+      "type": "object",
+      "description": "Represents a user-generated short text post shared in the application's social feed.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Post entity."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to the User who created this post. (Relationship: User 1:N Post)"
+        },
+        "content": {
+          "type": "string",
+          "description": "The text content of the user's post."
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp indicating when the post was created.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "content",
+        "createdAt"
+      ]
+    },
+    "Like": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Like",
+      "type": "object",
+      "description": "Represents a user's 'like' reaction to a specific post, forming a many-to-many relationship between users and posts.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Like entity."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to the User who liked the post. (Relationship: User N:N Post via Like)"
+        },
+        "postId": {
+          "type": "string",
+          "description": "Reference to the Post that was liked. (Relationship: User N:N Post via Like)"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp indicating when the like was recorded.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "postId",
+        "createdAt"
+      ]
+    },
+    "Comment": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Comment",
+      "type": "object",
+      "description": "Represents a user's comment on a specific post.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Comment entity."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to the User who created this comment. (Relationship: User 1:N Comment)"
+        },
+        "postId": {
+          "type": "string",
+          "description": "Reference to the Post this comment belongs to. (Relationship: Post 1:N Comment)"
+        },
+        "content": {
+          "type": "string",
+          "description": "The text content of the comment."
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp indicating when the comment was created.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "postId",
+        "content",
+        "createdAt"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/users/{userId}",
+        "definition": {
+          "entityName": "User",
+          "schema": {
+            "$ref": "#/backend/entities/User"
+          },
+          "description": "Stores user profiles and their onboarding status. The document ID `{userId}` matches the user's authentication UID, making authorization direct. Includes denormalized 'onboardingCompleted' status.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user, matching request.auth.uid."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/moodEntries/{moodEntryId}",
+        "definition": {
+          "entityName": "MoodEntry",
+          "schema": {
+            "$ref": "#/backend/entities/MoodEntry"
+          },
+          "description": "Records individual daily mood entries for each user. Authorization is based on the path's `userId` matching `request.auth.uid`, ensuring private ownership and enabling secure list operations (QAP). The 'userId' field is explicitly stored in the document for authorization independence.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user who owns this mood entry."
+            },
+            {
+              "name": "moodEntryId",
+              "description": "The unique identifier for a specific mood entry."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/moodGuideMessages/{moodGuideMessageId}",
+        "definition": {
+          "entityName": "MoodGuideMessage",
+          "schema": {
+            "$ref": "#/backend/entities/MoodGuideMessage"
+          },
+          "description": "A collection of static, system-defined supportive messages and suggestions categorized by mood. This collection is read-only for all authenticated users. No specific authorization fields are required as access is global for authenticated users (QAP compliant).",
+          "params": [
+            {
+              "name": "moodGuideMessageId",
+              "description": "The unique identifier for a specific mood guide message."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/posts/{postId}",
+        "definition": {
+          "entityName": "Post",
+          "schema": {
+            "$ref": "#/backend/entities/Post"
+          },
+          "description": "Stores user-generated social posts. Publicly readable by all authenticated users for the main feed. Write/update/delete restricted to the `userId` who created the post, which is denormalized into the document for authorization independence. Also includes denormalized `userName` and `userAvatarUrl` for display efficiency.",
+          "params": [
+            {
+              "name": "postId",
+              "description": "The unique identifier for a specific post."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/posts/{postId}/likes/{likeId}",
+        "definition": {
+          "entityName": "Like",
+          "schema": {
+            "$ref": "#/backend/entities/Like"
+          },
+          "description": "Records a user's 'like' on a specific post. Publicly readable by authenticated users to display like counts. Authorization for deletion is based on `userId` denormalized into the Like document, ensuring authorization independence. The count of likes can be denormalized to the parent Post document.",
+          "params": [
+            {
+              "name": "postId",
+              "description": "The unique identifier of the post being liked."
+            },
+            {
+              "name": "likeId",
+              "description": "The unique identifier for a specific like."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/posts/{postId}/comments/{commentId}",
+        "definition": {
+          "entityName": "Comment",
+          "schema": {
+            "$ref": "#/backend/entities/Comment"
+          },
+          "description": "Stores user comments on posts. Publicly readable by all authenticated users. Write/update/delete restricted to the `userId` who created the comment, which is denormalized into the document for authorization independence. Also includes denormalized `userName` and `userAvatarUrl` for display efficiency.",
+          "params": [
+            {
+              "name": "postId",
+              "description": "The unique identifier of the post the comment belongs to."
+            },
+            {
+              "name": "commentId",
+              "description": "The unique identifier for a specific comment."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "The Firestore structure for DailyPulse prioritizes Authorization Independence and Query-as-Permission (QAP) principles through strategic denormalization and structural segregation. Each user's private data, such as `MoodEntry` records, is housed within a dedicated subcollection under their unique user ID (`/users/{userId}/moodEntries/{moodEntryId}`). This path-based ownership ensures that security rules are simple and efficient, allowing only the authenticated user (`request.auth.uid`) to access their own records without requiring complex lookups (Auth Independence).\n\nFor social features like `Post`s, `Like`s, and `Comment`s, the design employs a top-level collection for `Post`s (`/posts/{postId}`) which are publicly readable by authenticated users. For `Like`s and `Comment`s, they reside as subcollections (`/posts/{postId}/likes/{likeId}` and `/posts/{postId}/comments/{commentId}`). To achieve Authorization Independence for these nested entities, the `userId` (owner) is denormalized directly into each `Post`, `Like`, and `Comment` document. This allows security rules to evaluate ownership for write/update/delete operations directly against `resource.data.userId` without performing expensive `get()` calls on parent documents or other collections. Additionally, common display fields like `userName` and `userAvatarUrl` would be denormalized into `Post` and `Comment` documents to prevent redundant reads in the client application.\n\nQAPs are naturally supported by this structure. For `MoodEntry` data, the hierarchical path `/users/{userId}/moodEntries/{moodEntryId}` inherently scopes queries to a specific user, making it impossible for a user to inadvertently list all mood entries across the entire database. Similarly, `MoodGuideMessage`s, being static application data, are in a global, read-only collection (`/moodGuideMessages/{moodGuideMessageId}`), allowing all authenticated users to list them for selection. For `Post`s, `Like`s, and `Comment`s, their publicly readable nature (for authenticated users) means that `list` operations on `/posts` or subcollections like `/posts/{postId}/comments` directly reflect the intended security posture, adhering to QAP by not requiring client-side filtering or complex rule-based filtering. The separation of publicly visible content from private user data (e.g., MoodEntries) in distinct collections or subcollection hierarchies ensures homogeneous security postures per collection, simplifying rules and enhancing debuggability."
+  }
+}

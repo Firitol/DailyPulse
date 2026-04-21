@@ -1,7 +1,8 @@
+
 "use client"
 
 import React, { useState } from 'react';
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/lib/i18n/context';
 import { doc, updateDoc } from 'firebase/firestore';
@@ -34,7 +35,6 @@ export function OnboardingTour({ userId, isOpen, onClose }: OnboardingTourProps)
       });
       onClose();
     } catch (e) {
-      console.error(e);
       onClose();
     }
   };
@@ -56,6 +56,9 @@ export function OnboardingTour({ userId, isOpen, onClose }: OnboardingTourProps)
           <DialogTitle className="text-center text-2xl font-bold text-primary">
             {currentStep.title}
           </DialogTitle>
+          <DialogDescription className="sr-only">
+            Step {step + 1} of the onboarding tour: {currentStep.title}
+          </DialogDescription>
         </DialogHeader>
         <div className="py-8 px-2">
           <div className="text-center text-muted-foreground whitespace-pre-line leading-relaxed">

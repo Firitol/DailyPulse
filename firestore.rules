@@ -3,6 +3,7 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     // Completely open rules for development to prevent any permission errors.
+    // Triggering a fresh deployment to resolve potential backend conflicts (409).
     match /{document=**} {
       allow read, write: if true;
     }

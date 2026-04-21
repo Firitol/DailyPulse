@@ -1,4 +1,3 @@
-
 "use client"
 
 import React, { useState, useEffect } from 'react';
@@ -24,6 +23,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { LogOut, Settings, LayoutDashboard, MessageSquare, History as HistoryIcon, Stethoscope, Search, Loader2 } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { SupportChat } from '@/components/support-chat';
 
 export function PatientDashboard({ profile }: { profile: UserProfile }) {
   const { user } = useUser();
@@ -133,7 +133,7 @@ export function PatientDashboard({ profile }: { profile: UserProfile }) {
   };
 
   return (
-    <main className="min-h-screen bg-background">
+    <main className="min-h-screen bg-background relative">
       <nav className="sticky top-0 z-50 w-full border-b bg-white/80 backdrop-blur-md">
         <div className="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
           <h1 className="text-xl font-bold text-primary flex items-center gap-2">
@@ -151,7 +151,7 @@ export function PatientDashboard({ profile }: { profile: UserProfile }) {
         </div>
       </nav>
 
-      <div className="max-w-4xl mx-auto px-4 py-8 space-y-8">
+      <div className="max-w-4xl mx-auto px-4 py-8 space-y-8 pb-24">
         {profile && user && <OnboardingTour userId={user.uid} isOpen={showTour} onClose={() => setShowTour(false)} />}
 
         <Tabs defaultValue="dashboard" className="w-full">
@@ -287,6 +287,9 @@ export function PatientDashboard({ profile }: { profile: UserProfile }) {
           </TabsContent>
         </Tabs>
       </div>
+      
+      {/* Floating Support Chat Component */}
+      <SupportChat />
     </main>
   );
 }

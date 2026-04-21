@@ -3,7 +3,7 @@
 
 import React, { useState } from 'react';
 import { useUser, useFirestore, useCollection, useAuth, useMemoFirebase } from '@/firebase';
-import { collection, query, orderBy, doc, updateDoc, setDoc } from 'firebase/firestore';
+import { collection, query, orderBy, doc, updateDoc, setDoc, where } from 'firebase/firestore';
 import { UserProfile, Assignment, MoodEntry, DoctorNote } from '@/lib/types';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -27,8 +27,12 @@ export function DoctorDashboard({ profile }: { profile: UserProfile }) {
 
   const assignmentsQuery = useMemoFirebase(() => {
     if (!user) return null;
-    return query(collection(db, 'assignments'), orderBy('createdAt', 'desc'));
-  }, [db]);
+    return query(
+      collection(db, 'assignments'), 
+      where('doctorId', '==', user.uid),
+      orderBy('createdAt', 'desc')
+    );
+  }, [db, user]);
   const { data: assignments } = useCollection<Assignment>(assignmentsQuery);
 
   const patientsQuery = useMemoFirebase(() => collection(db, 'users'), [db]);
@@ -36,8 +40,12 @@ export function DoctorDashboard({ profile }: { profile: UserProfile }) {
 
   const notesQuery = useMemoFirebase(() => {
     if (!user) return null;
-    return query(collection(db, 'doctorNotes'), orderBy('createdAt', 'desc'));
-  }, [db]);
+    return query(
+      collection(db, 'doctorNotes'), 
+      where('doctorId', '==', user.uid),
+      orderBy('createdAt', 'desc')
+    );
+  }, [db, user]);
   const { data: doctorNotes } = useCollection<DoctorNote>(notesQuery);
 
   const myAssignments = assignments?.filter(a => a.doctorId === user?.uid);

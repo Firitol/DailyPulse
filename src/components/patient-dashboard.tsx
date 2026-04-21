@@ -3,7 +3,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useUser, useFirestore, useCollection, useAuth, useMemoFirebase } from '@/firebase';
-import { collection, query, orderBy, limit, doc, setDoc } from 'firebase/firestore';
+import { collection, query, orderBy, limit, doc, setDoc, where } from 'firebase/firestore';
 import { isToday } from 'date-fns';
 import { MoodType, MoodEntry, UserProfile, Assignment, DoctorProfile, DoctorNote } from '@/lib/types';
 import { MoodSelector } from '@/components/mood-selector';
@@ -44,8 +44,12 @@ export function PatientDashboard({ profile }: { profile: UserProfile }) {
 
   const assignmentsQuery = useMemoFirebase(() => {
     if (!user) return null;
-    return query(collection(db, 'assignments'), orderBy('createdAt', 'desc'));
-  }, [db]);
+    return query(
+      collection(db, 'assignments'), 
+      where('patientId', '==', user.uid),
+      orderBy('createdAt', 'desc')
+    );
+  }, [db, user]);
   const { data: assignments } = useCollection<Assignment>(assignmentsQuery);
 
   const doctorsQuery = useMemoFirebase(() => collection(db, 'doctorProfiles'), [db]);
@@ -53,8 +57,12 @@ export function PatientDashboard({ profile }: { profile: UserProfile }) {
 
   const notesQuery = useMemoFirebase(() => {
     if (!user) return null;
-    return query(collection(db, 'doctorNotes'), orderBy('createdAt', 'desc'));
-  }, [db]);
+    return query(
+      collection(db, 'doctorNotes'), 
+      where('patientId', '==', user.uid),
+      orderBy('createdAt', 'desc')
+    );
+  }, [db, user]);
   const { data: doctorNotes } = useCollection<DoctorNote>(notesQuery);
 
   const todayEntry = entries?.find(e => isToday(new Date(e.date)));

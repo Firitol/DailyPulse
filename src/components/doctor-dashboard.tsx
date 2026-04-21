@@ -2,8 +2,8 @@
 "use client"
 
 import React, { useState } from 'react';
-import { useUser, useFirestore, useCollection, useAuth, useMemoFirebase } from '@/firebase';
-import { collection, query, orderBy, doc, updateDoc, setDoc, where } from 'firebase/firestore';
+import { useUser, useFirestore, useCollection, useAuth, useMemoFirebase, updateDocumentNonBlocking, setDocumentNonBlocking } from '@/firebase';
+import { collection, query, orderBy, doc, where } from 'firebase/firestore';
 import { UserProfile, Assignment, MoodEntry, DoctorNote } from '@/lib/types';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -25,30 +25,24 @@ export function DoctorDashboard({ profile }: { profile: UserProfile }) {
   const [selectedPatientId, setSelectedPatientId] = useState<string | null>(null);
   const [noteContent, setNoteContent] = useState('');
 
+  // Simplified queries to avoid composite index requirements in MVP
   const assignmentsQuery = useMemoFirebase(() => {
     if (!user) return null;
-    return query(
-      collection(db, 'assignments'), 
-      where('doctorId', '==', user.uid),
-      orderBy('createdAt', 'desc')
-    );
+    return collection(db, 'assignments');
   }, [db, user]);
-  const { data: assignments } = useCollection<Assignment>(assignmentsQuery);
+  const { data: rawAssignments } = useCollection<Assignment>(assignmentsQuery);
 
   const patientsQuery = useMemoFirebase(() => collection(db, 'users'), [db]);
   const { data: allUsers } = useCollection<UserProfile>(patientsQuery);
 
   const notesQuery = useMemoFirebase(() => {
     if (!user) return null;
-    return query(
-      collection(db, 'doctorNotes'), 
-      where('doctorId', '==', user.uid),
-      orderBy('createdAt', 'desc')
-    );
+    return query(collection(db, 'doctorNotes'), orderBy('createdAt', 'desc'));
   }, [db, user]);
-  const { data: doctorNotes } = useCollection<DoctorNote>(notesQuery);
+  const { data: rawDoctorNotes } = useCollection<DoctorNote>(notesQuery);
 
-  const myAssignments = assignments?.filter(a => a.doctorId === user?.uid);
+  // In-memory filtering to bypass potential index issues
+  const myAssignments = rawAssignments?.filter(a => a.doctorId === user?.uid);
   const requests = myAssignments?.filter(a => a.status === 'pending');
   const patients = myAssignments?.filter(a => a.status === 'accepted');
 
@@ -59,21 +53,23 @@ export function DoctorDashboard({ profile }: { profile: UserProfile }) {
   }, [db, selectedPatientId]);
   const { data: patientMoods } = useCollection<MoodEntry>(patientMoodsQuery);
 
-  const handleAssignmentStatus = async (id: string, status: 'accepted' | 'rejected') => {
-    await updateDoc(doc(db, 'assignments', id), { status });
+  const doctorNotes = rawDoctorNotes?.filter(n => n.doctorId === user?.uid);
+
+  const handleAssignmentStatus = (id: string, status: 'accepted' | 'rejected') => {
+    updateDocumentNonBlocking(doc(db, 'assignments', id), { status });
     toast({ title: `Request ${status}` });
   };
 
-  const handleAddNote = async () => {
+  const handleAddNote = () => {
     if (!selectedPatientId || !user || !noteContent.trim()) return;
     const noteId = crypto.randomUUID();
-    await setDoc(doc(db, 'doctorNotes', noteId), {
+    setDocumentNonBlocking(doc(db, 'doctorNotes', noteId), {
       id: noteId,
       patientId: selectedPatientId,
       doctorId: user.uid,
       content: noteContent,
       createdAt: new Date().toISOString()
-    });
+    }, { merge: true });
     setNoteContent('');
     toast({ title: "Note saved successfully" });
   };

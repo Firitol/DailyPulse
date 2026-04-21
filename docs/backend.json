@@ -81,6 +81,19 @@
         "content": { "type": "string" },
         "createdAt": { "type": "string", "format": "date-time" }
       }
+    },
+    "Post": {
+      "title": "Post",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "userName": { "type": "string" },
+        "userAvatarUrl": { "type": "string" },
+        "content": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "likeCount": { "type": "number" }
+      }
     }
   },
   "auth": {
@@ -118,6 +131,14 @@
           "entityName": "DoctorNote",
           "schema": { "$ref": "#/backend/entities/DoctorNote" },
           "description": "Clinical notes from doctors to patients."
+        }
+      },
+      {
+        "path": "/posts/{postId}",
+        "definition": {
+          "entityName": "Post",
+          "schema": { "$ref": "#/backend/entities/Post" },
+          "description": "Community social posts."
         }
       }
     ]

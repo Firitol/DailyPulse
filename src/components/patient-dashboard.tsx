@@ -2,8 +2,8 @@
 "use client"
 
 import React, { useState, useEffect } from 'react';
-import { useUser, useFirestore, useCollection, useAuth, useMemoFirebase } from '@/firebase';
-import { collection, query, orderBy, limit, doc, setDoc, where } from 'firebase/firestore';
+import { useUser, useFirestore, useCollection, useAuth, useMemoFirebase, setDocumentNonBlocking } from '@/firebase';
+import { collection, query, orderBy, limit, doc, where } from 'firebase/firestore';
 import { isToday } from 'date-fns';
 import { MoodType, MoodEntry, UserProfile, Assignment, DoctorProfile, DoctorNote } from '@/lib/types';
 import { MoodSelector } from '@/components/mood-selector';
@@ -42,32 +42,27 @@ export function PatientDashboard({ profile }: { profile: UserProfile }) {
   }, [db, user]);
   const { data: entries } = useCollection<MoodEntry>(moodsQuery);
 
+  // Simplified queries for MVP to avoid index issues
   const assignmentsQuery = useMemoFirebase(() => {
     if (!user) return null;
-    return query(
-      collection(db, 'assignments'), 
-      where('patientId', '==', user.uid),
-      orderBy('createdAt', 'desc')
-    );
+    return collection(db, 'assignments');
   }, [db, user]);
-  const { data: assignments } = useCollection<Assignment>(assignmentsQuery);
+  const { data: rawAssignments } = useCollection<Assignment>(assignmentsQuery);
 
   const doctorsQuery = useMemoFirebase(() => collection(db, 'doctorProfiles'), [db]);
   const { data: allDoctors } = useCollection<DoctorProfile>(doctorsQuery);
 
   const notesQuery = useMemoFirebase(() => {
     if (!user) return null;
-    return query(
-      collection(db, 'doctorNotes'), 
-      where('patientId', '==', user.uid),
-      orderBy('createdAt', 'desc')
-    );
+    return query(collection(db, 'doctorNotes'), orderBy('createdAt', 'desc'));
   }, [db, user]);
-  const { data: doctorNotes } = useCollection<DoctorNote>(notesQuery);
+  const { data: rawDoctorNotes } = useCollection<DoctorNote>(notesQuery);
 
   const todayEntry = entries?.find(e => isToday(new Date(e.date)));
-  const myAssignment = assignments?.find(a => a.patientId === user?.uid && a.status === 'accepted');
+  const assignments = rawAssignments?.filter(a => a.patientId === user?.uid);
+  const myAssignment = assignments?.find(a => a.status === 'accepted');
   const myDoctor = allDoctors?.find(d => d.userId === myAssignment?.doctorId);
+  const doctorNotes = rawDoctorNotes?.filter(n => n.patientId === user?.uid);
 
   useEffect(() => {
     if (profile && !profile.onboardingCompleted) {
@@ -86,9 +81,7 @@ export function PatientDashboard({ profile }: { profile: UserProfile }) {
       });
       
       const moodEntryId = crypto.randomUUID();
-      const newEntryRef = doc(db, 'users', user.uid, 'moodEntries', moodEntryId);
-      
-      await setDoc(newEntryRef, {
+      setDocumentNonBlocking(doc(db, 'users', user.uid, 'moodEntries', moodEntryId), {
         id: moodEntryId,
         userId: user.uid,
         mood,
@@ -97,7 +90,7 @@ export function PatientDashboard({ profile }: { profile: UserProfile }) {
         message: guide.supportiveMessage,
         suggestions: guide.suggestions,
         moodGuideMessageId: 'generated-via-ai'
-      });
+      }, { merge: true });
       
       toast({ title: t.toastCheckedIn });
     } catch (error) {
@@ -107,16 +100,16 @@ export function PatientDashboard({ profile }: { profile: UserProfile }) {
     }
   };
 
-  const handleRequestDoctor = async (doctorId: string) => {
+  const handleRequestDoctor = (doctorId: string) => {
     if (!user) return;
     const assignmentId = `${user.uid}_${doctorId}`;
-    await setDoc(doc(db, 'assignments', assignmentId), {
+    setDocumentNonBlocking(doc(db, 'assignments', assignmentId), {
       id: assignmentId,
       patientId: user.uid,
       doctorId: doctorId,
       status: 'pending',
       createdAt: new Date().toISOString()
-    });
+    }, { merge: true });
     toast({ title: "Request Sent", description: "The doctor will review your request soon." });
   };
 
@@ -192,7 +185,7 @@ export function PatientDashboard({ profile }: { profile: UserProfile }) {
 
                 <div className="space-y-4">
                   <h3 className="text-lg font-semibold">Messages from your doctor</h3>
-                  {doctorNotes?.filter(n => n.patientId === user?.uid).map(note => (
+                  {doctorNotes?.map(note => (
                     <Card key={note.id} className="border-none shadow-sm bg-accent/20">
                       <CardContent className="p-4">
                         <p className="text-sm italic">"{note.content}"</p>
@@ -211,7 +204,7 @@ export function PatientDashboard({ profile }: { profile: UserProfile }) {
                 </div>
                 <div className="grid gap-4">
                   {allDoctors?.filter(d => d.name.toLowerCase().includes(searchDoctor.toLowerCase())).map(doc => {
-                    const status = assignments?.find(a => a.doctorId === doc.userId && a.patientId === user?.uid)?.status;
+                    const status = assignments?.find(a => a.doctorId === doc.userId)?.status;
                     return (
                       <Card key={doc.id} className="border-none shadow-sm bg-white">
                         <CardContent className="p-4 flex items-center justify-between">

@@ -2,78 +2,10 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-
-    // --- Helper Functions ---
-
-    function isSignedIn() {
-      return request.auth != null;
-    }
-
-    function isOwner(userId) {
-      return isSignedIn() && request.auth.uid == userId;
-    }
-
-    function getUserData() {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
-    }
-
-    function isRole(role) {
-      return isSignedIn() && getUserData().role == role;
-    }
-
-    /** 
-     * Checks if a doctor is assigned to a patient.
-     * This is a simplified check for MVP. In high-scale apps, 
-     * we'd use denormalized IDs or custom claims.
-     */
-    function isAssigned(patientId, doctorId) {
-      return exists(/databases/$(database)/documents/assignments/$(patientId + '_' + doctorId)) &&
-             get(/databases/$(database)/documents/assignments/$(patientId + '_' + doctorId)).data.status == 'accepted';
-    }
-
-    // --- Collection Rules ---
-
-    match /users/{userId} {
-      allow get: if isSignedIn();
-      allow list: if isRole('doctor'); // Doctors can list patients to find them
-      allow create: if isOwner(userId);
-      allow update: if isOwner(userId);
-      
-      match /moodEntries/{moodEntryId} {
-        allow get, list: if isOwner(userId) || (isRole('doctor') && isAssigned(userId, request.auth.uid));
-        allow create: if isOwner(userId);
-        allow update, delete: if isOwner(userId);
-      }
-    }
-
-    match /doctorProfiles/{userId} {
-      allow read: if isSignedIn();
-      allow write: if isOwner(userId) && isRole('doctor');
-    }
-
-    match /assignments/{assignmentId} {
-      allow read: if isSignedIn() && (request.auth.uid == resource.data.patientId || request.auth.uid == resource.data.doctorId);
-      allow create: if isSignedIn();
-      allow update: if isSignedIn() && (request.auth.uid == resource.data.doctorId || request.auth.uid == resource.data.patientId);
-      allow delete: if false;
-    }
-
-    match /doctorNotes/{noteId} {
-      allow read: if isSignedIn() && (request.auth.uid == resource.data.patientId || request.auth.uid == resource.data.doctorId);
-      allow create: if isRole('doctor') && isAssigned(request.resource.data.patientId, request.auth.uid);
-      allow update: if isRole('doctor') && request.auth.uid == resource.data.doctorId;
-      allow delete: if isRole('doctor') && request.auth.uid == resource.data.doctorId;
-    }
-
-    match /posts/{postId} {
-      allow get, list: if isSignedIn();
-      allow create: if isSignedIn();
-      allow update, delete: if isSignedIn() && resource.data.userId == request.auth.uid;
-
-      match /likes/{likeId} {
-        allow read: if isSignedIn();
-        allow create, delete: if isSignedIn();
-      }
+    // Permissive rules to allow all read and write operations, 
+    // effectively disabling security restrictions as requested.
+    match /{document=**} {
+      allow read, write: if true;
     }
   }
 }

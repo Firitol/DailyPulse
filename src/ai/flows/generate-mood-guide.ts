@@ -14,6 +14,10 @@ const GenerateMoodGuideInputSchema = z.object({
   mood: z
     .enum(['Happy', 'Calm', 'Stressed', 'Sad', 'Angry', 'Motivated', 'Tired'])
     .describe('The user\u0027s selected mood.'),
+  language: z
+    .enum(['English', 'Afan Oromo', 'Amharic'])
+    .describe('The language in which the response should be generated.')
+    .default('English'),
 });
 export type GenerateMoodGuideInput = z.infer<typeof GenerateMoodGuideInputSchema>;
 
@@ -32,6 +36,8 @@ const prompt = ai.definePrompt({
   prompt: `You are a compassionate and helpful AI assistant designed to provide daily mood guidance for a mental wellness app called DailyPulse.
 
 Based on the user's selected mood, provide a short, supportive message and one to two practical, personalized suggestions. The suggestions should be actionable and relevant to the mood. Ensure the messages and suggestions feel fresh and non-repetitive over time.
+
+VERY IMPORTANT: You MUST respond in the following language: {{{language}}}.
 
 Mood: {{{mood}}}`,
 });

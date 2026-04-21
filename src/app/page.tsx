@@ -6,14 +6,16 @@ import { MoodSelector } from '@/components/mood-selector';
 import { MoodResult } from '@/components/mood-result';
 import { MoodHistory } from '@/components/mood-history';
 import { ReminderBanner } from '@/components/reminder-banner';
-import { generateMoodGuide, GenerateMoodGuideOutput } from '@/ai/flows/generate-mood-guide';
-import { format, isToday } from 'date-fns';
+import { generateMoodGuide } from '@/ai/flows/generate-mood-guide';
+import { isToday } from 'date-fns';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Card, CardContent } from '@/components/ui/card';
 import { Toaster } from '@/components/ui/toaster';
 import { useToast } from '@/hooks/use-toast';
+import { LanguageToggle } from '@/components/language-toggle';
+import { useLanguage } from '@/lib/i18n/context';
 
 export default function DailyPulse() {
+  const { t, language } = useLanguage();
   const [entries, setEntries] = useState<MoodEntry[]>([]);
   const [isCheckingIn, setIsCheckingIn] = useState(false);
   const [currentEntry, setCurrentEntry] = useState<MoodEntry | null>(null);
@@ -22,7 +24,6 @@ export default function DailyPulse() {
   const { toast } = useToast();
 
   useEffect(() => {
-    // Load local data (simulating DB persistency)
     const stored = localStorage.getItem('dailypulse_moods');
     if (stored) {
       const parsed: MoodEntry[] = JSON.parse(stored);
@@ -43,8 +44,16 @@ export default function DailyPulse() {
   const handleMoodSelect = async (mood: MoodType) => {
     setIsCheckingIn(true);
     try {
-      // Use the GenAI flow
-      const guide = await generateMoodGuide({ mood });
+      const languageMap = {
+        en: 'English',
+        om: 'Afan Oromo',
+        am: 'Amharic'
+      };
+
+      const guide = await generateMoodGuide({ 
+        mood, 
+        language: languageMap[language] as any
+      });
       
       const newEntry: MoodEntry = {
         id: crypto.randomUUID(),
@@ -54,7 +63,6 @@ export default function DailyPulse() {
         suggestions: guide.suggestions
       };
 
-      // Filter out any existing entries for today (allow edit/overwrite)
       const updatedEntries = entries.filter(e => !isToday(new Date(e.date)));
       const finalEntries = [newEntry, ...updatedEntries];
       
@@ -64,14 +72,14 @@ export default function DailyPulse() {
       setShowReminder(false);
       
       toast({
-        title: "Checked in!",
-        description: "Your mood has been recorded for today.",
+        title: t.toastCheckedIn,
+        description: t.toastCheckedInDesc,
       });
     } catch (error) {
       toast({
         variant: "destructive",
-        title: "Error",
-        description: "Failed to generate your mood guide. Please try again.",
+        title: t.toastError,
+        description: t.toastErrorDesc,
       });
     } finally {
       setIsCheckingIn(false);
@@ -89,22 +97,23 @@ export default function DailyPulse() {
 
   return (
     <main className="max-w-4xl mx-auto px-4 py-8 md:py-16 space-y-10">
-      {/* Header */}
+      <div className="absolute top-4 right-4">
+        <LanguageToggle />
+      </div>
+
       <header className="text-center space-y-2">
-        <h1 className="text-4xl font-bold tracking-tight text-primary">DailyPulse</h1>
-        <p className="text-muted-foreground font-medium">Your companion for emotional clarity and growth.</p>
+        <h1 className="text-4xl font-bold tracking-tight text-primary">{t.appTitle}</h1>
+        <p className="text-muted-foreground font-medium">{t.tagline}</p>
       </header>
 
-      {/* Reminder */}
       {showReminder && !currentEntry && (
         <ReminderBanner onDismiss={() => setShowReminder(false)} />
       )}
 
-      {/* Check-in Section */}
       <section className="space-y-6">
         <div className="text-center md:text-left">
-          <h2 className="text-2xl font-semibold">How are you feeling today?</h2>
-          <p className="text-muted-foreground">Check in once a day to track your emotional journey.</p>
+          <h2 className="text-2xl font-semibold">{t.howFeeling}</h2>
+          <p className="text-muted-foreground">{t.checkInDesc}</p>
         </div>
 
         <MoodSelector 
@@ -130,7 +139,6 @@ export default function DailyPulse() {
         )}
       </section>
 
-      {/* History Section */}
       <section className="pt-8 border-t border-muted">
         <MoodHistory entries={entries} />
       </section>

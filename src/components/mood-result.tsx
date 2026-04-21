@@ -1,9 +1,10 @@
 "use client"
 
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Sparkles, Lightbulb, Heart } from 'lucide-react';
 import { GenerateMoodGuideOutput } from '@/ai/flows/generate-mood-guide';
+import { useLanguage } from '@/lib/i18n/context';
 
 interface MoodResultProps {
   result: GenerateMoodGuideOutput;
@@ -11,13 +12,14 @@ interface MoodResultProps {
 }
 
 export function MoodResult({ result, mood }: MoodResultProps) {
+  const { t } = useLanguage();
   return (
     <Card className="border-none shadow-lg bg-white overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-700">
       <div className="h-2 bg-gradient-to-r from-primary to-secondary" />
       <CardHeader className="pb-2">
         <div className="flex items-center gap-2 text-primary font-medium">
           <Sparkles className="h-4 w-4" />
-          <span>Daily Guide for feeling {mood}</span>
+          <span>{t.dailyGuideFor} {mood}</span>
         </div>
       </CardHeader>
       <CardContent className="space-y-6 pt-4">
@@ -35,7 +37,7 @@ export function MoodResult({ result, mood }: MoodResultProps) {
         <div className="space-y-3">
           <div className="flex items-center gap-2 text-sm font-semibold text-muted-foreground uppercase tracking-wider">
             <Lightbulb className="h-4 w-4 text-secondary" />
-            <span>Practical Suggestions</span>
+            <span>{t.practicalSuggestions}</span>
           </div>
           <ul className="grid gap-2">
             {result.suggestions.map((suggestion, idx) => (

@@ -1,0 +1,17 @@
+{
+  "name": "DailyPulse Wellness",
+  "short_name": "DailyPulse",
+  "description": "Your companion for emotional clarity and growth.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f8fafc",
+  "theme_color": "#3b82f6",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

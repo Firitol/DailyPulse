@@ -1,3 +1,5 @@
+
+export type UserRole = 'patient' | 'doctor';
 export type MoodType = 'Happy' | 'Calm' | 'Stressed' | 'Sad' | 'Angry' | 'Motivated' | 'Tired';
 
 export interface MoodEntry {
@@ -16,8 +18,33 @@ export interface UserProfile {
   name: string;
   email: string;
   avatarUrl: string;
-  createdAt: string;
+  role: UserRole;
+  createdAt: any;
   onboardingCompleted: boolean;
+}
+
+export interface DoctorProfile {
+  id: string;
+  userId: string;
+  name: string;
+  specialization: string;
+  bio: string;
+}
+
+export interface Assignment {
+  id: string;
+  patientId: string;
+  doctorId: string;
+  status: 'pending' | 'accepted' | 'rejected';
+  createdAt: string;
+}
+
+export interface DoctorNote {
+  id: string;
+  patientId: string;
+  doctorId: string;
+  content: string;
+  createdAt: string;
 }
 
 export interface Post {

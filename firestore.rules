@@ -1,35 +1,3 @@
-/**
- * DailyPulse Security Rules
- * 
- * Core Philosophy:
- * This ruleset implements an "Ownership and Social Transparency" model. Private wellness data 
- * (MoodEntries) is strictly isolated within user-specific subcollections, ensuring total privacy. 
- * Social features (Posts, Likes, Comments) are globally readable by authenticated users but 
- * strictly writable only by their respective authors.
- * 
- * Data Structure:
- * - /users/{userId}: Root profiles, authorized by UID.
- * - /users/{userId}/moodEntries/{id}: Private user-owned wellness data.
- * - /moodGuideMessages/{id}: Read-only system-defined guidance data.
- * - /posts/{id}: Social feed items, public read, owner-only write.
- * - /posts/{id}/likes & /posts/{id}/comments: Sub-resources of posts, public read, owner-only write.
- * 
- * Key Security Decisions:
- * 1. Path-Based Authorization: User-specific data uses the {userId} in the path to verify 
- *    ownership instantly without extra lookups.
- * 2. Denormalized Ownership: Social entities (Posts, Likes, Comments) store a `userId` field 
- *    internally. This allows for fast, stateless write authorization by checking the document 
- *    content directly against the user's authentication token.
- * 3. Immutable Identity: On updates, the rules enforce that ownership fields (`userId`) 
- *    cannot be changed, preventing users from "transferring" content or spoofing others.
- * 4. Read-Only System Data: The `moodGuideMessages` collection is locked down to prevent 
- *    client-side modifications, acting as a trusted repository of content.
- * 
- * Structural Segregation:
- * Private wellness tracking is nested under the user document. This creates a natural 
- * boundary that prevents accidental data leakage in broad queries, as the client must 
- * explicitly target a user's path.
- */
 
 rules_version = '2';
 service cloud.firestore {
@@ -37,117 +5,74 @@ service cloud.firestore {
 
     // --- Helper Functions ---
 
-    /** Checks if the user is authenticated with any provider. */
     function isSignedIn() {
       return request.auth != null;
     }
 
-    /** Checks if the authenticated user matches the provided ID (usually from path). */
     function isOwner(userId) {
       return isSignedIn() && request.auth.uid == userId;
     }
 
-    /** Validates ownership for update/delete on existing data. */
-    function isExistingOwner(userId) {
-      return resource != null && isOwner(userId);
+    function getUserData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
     }
 
-    /** Checks if the userId field in the incoming data matches the authenticated user. */
-    function isDataOwner() {
-      return isSignedIn() && request.resource.data.userId == request.auth.uid;
+    function isRole(role) {
+      return isSignedIn() && getUserData().role == role;
     }
 
-    /** Checks if the userId field in the existing document matches the authenticated user. */
-    function wasDataOwner() {
-      return resource != null && resource.data.userId == request.auth.uid;
-    }
-
-    /** Enforces immutability of the userId field. */
-    function userIdIsImmutable() {
-      return request.resource.data.userId == resource.data.userId;
+    /** 
+     * Checks if a doctor is assigned to a patient.
+     * This is a simplified check for MVP. In high-scale apps, 
+     * we'd use denormalized IDs or custom claims.
+     */
+    function isAssigned(patientId, doctorId) {
+      return exists(/databases/$(database)/documents/assignments/$(patientId + '_' + doctorId)) &&
+             get(/databases/$(database)/documents/assignments/$(patientId + '_' + doctorId)).data.status == 'accepted';
     }
 
     // --- Collection Rules ---
 
-    /**
-     * @description Rules for user profiles and onboarding status.
-     * @path /users/{userId}
-     * @allow (create) if authenticated UID matches document ID.
-     * @deny (get) if user A tries to view user B's full private profile.
-     * @principle Self-creation and strict path-based ownership.
-     */
     match /users/{userId} {
-      allow get, list: if isOwner(userId);
+      allow get: if isSignedIn();
+      allow list: if isRole('doctor'); // Doctors can list patients to find them
       allow create: if isOwner(userId);
-      allow update: if isExistingOwner(userId);
-      allow delete: if isExistingOwner(userId);
-
-      /**
-       * @description Private mood tracking entries for the user.
-       * @path /users/{userId}/moodEntries/{moodEntryId}
-       * @allow (list) if user is the parent document owner.
-       * @deny (create) if internal userId field does not match the path owner.
-       * @principle Path-based isolation combined with relational integrity validation.
-       */
+      allow update: if isOwner(userId);
+      
       match /moodEntries/{moodEntryId} {
-        allow get, list: if isOwner(userId);
-        allow create: if isOwner(userId) && isDataOwner();
-        allow update: if isExistingOwner(userId) && userIdIsImmutable();
-        allow delete: if isExistingOwner(userId);
+        allow get, list: if isOwner(userId) || (isRole('doctor') && isAssigned(userId, request.auth.uid));
+        allow create: if isOwner(userId);
+        allow update, delete: if isOwner(userId);
       }
     }
 
-    /**
-     * @description System-defined mood guidance messages.
-     * @path /moodGuideMessages/{moodGuideMessageId}
-     * @allow (get, list) if any user is signed in.
-     * @deny (write) to all clients; this data is managed by system admins/scripts.
-     * @principle Publicly readable system configuration.
-     */
-    match /moodGuideMessages/{moodGuideMessageId} {
-      allow get, list: if isSignedIn();
-      allow create, update, delete: if false;
+    match /doctorProfiles/{userId} {
+      allow read: if isSignedIn();
+      allow write: if isOwner(userId) && isRole('doctor');
     }
 
-    /**
-     * @description Shared social posts.
-     * @path /posts/{postId}
-     * @allow (create) if the post's userId field matches the sender's UID.
-     * @deny (update) if the existing post belongs to a different user.
-     * @principle Public consumption with owner-only modifications via denormalized fields.
-     */
+    match /assignments/{assignmentId} {
+      allow read: if isSignedIn() && (request.auth.uid == resource.data.patientId || request.auth.uid == resource.data.doctorId);
+      allow create: if isSignedIn();
+      allow update: if isSignedIn() && (request.auth.uid == resource.data.doctorId || request.auth.uid == resource.data.patientId);
+      allow delete: if false;
+    }
+
+    match /doctorNotes/{noteId} {
+      allow read: if isSignedIn() && (request.auth.uid == resource.data.patientId || request.auth.uid == resource.data.doctorId);
+      allow create: if isRole('doctor') && isAssigned(request.resource.data.patientId, request.auth.uid);
+      allow update: if isRole('doctor') && request.auth.uid == resource.data.doctorId;
+      allow delete: if isRole('doctor') && request.auth.uid == resource.data.doctorId;
+    }
+
     match /posts/{postId} {
       allow get, list: if isSignedIn();
-      allow create: if isDataOwner();
-      allow update: if wasDataOwner() && userIdIsImmutable();
-      allow delete: if wasDataOwner();
+      allow create: if isSignedIn();
+      allow update, delete: if isSignedIn() && resource.data.userId == request.auth.uid;
 
-      /**
-       * @description Post reactions (likes).
-       * @path /posts/{postId}/likes/{likeId}
-       * @allow (create) if userId in data matches sender.
-       * @deny (update) as likes are typically binary (created or deleted).
-       * @principle Relationship-based authorization using denormalized ownership.
-       */
       match /likes/{likeId} {
-        allow get, list: if isSignedIn();
-        allow create: if isDataOwner();
-        allow update: if false; // Likes are immutable; delete and recreate instead.
-        allow delete: if wasDataOwner();
-      }
-
-      /**
-       * @description User comments on posts.
-       * @path /posts/{postId}/comments/{commentId}
-       * @allow (delete) if the user created the comment.
-       * @deny (create) if user tries to comment on behalf of someone else.
-       * @principle Owner-only write permissions for sub-resources.
-       */
-      match /comments/{commentId} {
-        allow get, list: if isSignedIn();
-        allow create: if isDataOwner();
-        allow update: if wasDataOwner() && userIdIsImmutable();
-        allow delete: if wasDataOwner();
+        allow read: if isSignedIn();
+        allow create, delete: if isSignedIn();
       }
     }
   }

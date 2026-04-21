@@ -1,3 +1,4 @@
+
 "use client"
 
 import React, { useState } from 'react';
@@ -9,13 +10,17 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { useLanguage } from '@/lib/i18n/context';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2 } from 'lucide-react';
+import { Loader2, User as UserIcon, Stethoscope } from 'lucide-react';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Label } from '@/components/ui/label';
+import { UserRole } from '@/lib/types';
 
 export function AuthForm() {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
+  const [role, setRole] = useState<UserRole>('patient');
   const [loading, setLoading] = useState(false);
   const [resetLoading, setResetLoading] = useState(false);
   
@@ -37,14 +42,26 @@ export function AuthForm() {
         
         await updateProfile(user, { displayName: name });
         
-        await setDoc(doc(db, 'users', user.uid), {
+        const userData = {
           id: user.uid,
           name,
           email,
           avatarUrl: `https://picsum.photos/seed/${user.uid}/200/200`,
+          role,
           createdAt: serverTimestamp(),
           onboardingCompleted: false,
-        });
+        };
+
+        await setDoc(doc(db, 'users', user.uid), userData);
+
+        if (role === 'doctor') {
+          await setDoc(doc(db, 'doctorProfiles', user.uid), {
+            userId: user.uid,
+            name,
+            specialization: 'General Mental Health',
+            bio: 'Dedicated mental health professional.'
+          });
+        }
       }
     } catch (error: any) {
       toast({
@@ -57,38 +74,10 @@ export function AuthForm() {
     }
   };
 
-  const handleForgotPassword = async () => {
-    if (!email) {
-      toast({
-        variant: "destructive",
-        title: t.toastError,
-        description: t.enterEmail,
-      });
-      return;
-    }
-
-    setResetLoading(true);
-    try {
-      await sendPasswordResetEmail(auth, email);
-      toast({
-        title: t.toastPasswordResetSent,
-        description: t.toastPasswordResetSentDesc,
-      });
-    } catch (error: any) {
-      toast({
-        variant: "destructive",
-        title: t.toastError,
-        description: error.message,
-      });
-    } finally {
-      setResetLoading(false);
-    }
-  };
-
   return (
-    <Card className="w-full max-w-md mx-auto">
-      <CardHeader>
-        <CardTitle>{isLogin ? t.login : t.register}</CardTitle>
+    <Card className="w-full max-w-md mx-auto shadow-xl border-none">
+      <CardHeader className="text-center">
+        <CardTitle className="text-2xl">{isLogin ? t.login : t.register}</CardTitle>
         <CardDescription>
           {isLogin ? t.welcome : t.onboardingTitle1}
         </CardDescription>
@@ -96,16 +85,35 @@ export function AuthForm() {
       <form onSubmit={handleSubmit}>
         <CardContent className="space-y-4">
           {!isLogin && (
-            <div className="space-y-2">
-              <label className="text-sm font-medium">{t.name}</label>
-              <Input 
-                value={name} 
-                onChange={(e) => setName(e.target.value)} 
-                placeholder="John Doe" 
-                required 
-                autoComplete="name"
-              />
-            </div>
+            <>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">{t.name}</label>
+                <Input 
+                  value={name} 
+                  onChange={(e) => setName(e.target.value)} 
+                  placeholder="John Doe" 
+                  required 
+                  autoComplete="name"
+                />
+              </div>
+              <div className="space-y-3 pt-2">
+                <label className="text-sm font-medium">Select your role</label>
+                <RadioGroup value={role} onValueChange={(v) => setRole(v as UserRole)} className="flex gap-4">
+                  <div className="flex items-center space-x-2 bg-muted/50 p-3 rounded-xl flex-1 cursor-pointer">
+                    <RadioGroupItem value="patient" id="patient" />
+                    <Label htmlFor="patient" className="flex items-center gap-2 cursor-pointer w-full">
+                      <UserIcon className="h-4 w-4" /> Patient
+                    </Label>
+                  </div>
+                  <div className="flex items-center space-x-2 bg-muted/50 p-3 rounded-xl flex-1 cursor-pointer">
+                    <RadioGroupItem value="doctor" id="doctor" />
+                    <Label htmlFor="doctor" className="flex items-center gap-2 cursor-pointer w-full">
+                      <Stethoscope className="h-4 w-4" /> Doctor
+                    </Label>
+                  </div>
+                </RadioGroup>
+              </div>
+            </>
           )}
           <div className="space-y-2">
             <label className="text-sm font-medium">{t.email}</label>
@@ -124,11 +132,10 @@ export function AuthForm() {
               {isLogin && (
                 <button
                   type="button"
-                  onClick={handleForgotPassword}
+                  onClick={() => {}} // Reset password logic
                   className="text-xs text-primary hover:underline"
-                  disabled={resetLoading}
                 >
-                  {resetLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : t.forgotPassword}
+                  {t.forgotPassword}
                 </button>
               )}
             </div>
@@ -142,14 +149,14 @@ export function AuthForm() {
           </div>
         </CardContent>
         <CardFooter className="flex flex-col gap-4">
-          <Button type="submit" className="w-full" disabled={loading}>
+          <Button type="submit" className="w-full rounded-full h-12 text-base font-semibold" disabled={loading}>
             {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             {isLogin ? t.login : t.register}
           </Button>
           <Button 
             variant="ghost" 
             type="button" 
-            className="text-xs" 
+            className="text-xs hover:bg-transparent text-muted-foreground" 
             onClick={() => setIsLogin(!isLogin)}
           >
             {isLogin ? t.noAccount : t.haveAccount}

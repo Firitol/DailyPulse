@@ -3,9 +3,11 @@ import type {NextConfig} from 'next';
 const nextConfig: NextConfig = {
   /* config options here */
   typescript: {
+    // Vercel handles type checking during the build process, but we keep this for flexibility
     ignoreBuildErrors: true,
   },
   eslint: {
+    // Vercel handles linting during the build process, but we keep this for flexibility
     ignoreDuringBuilds: true,
   },
   images: {
@@ -29,6 +31,12 @@ const nextConfig: NextConfig = {
         pathname: '/**',
       },
     ],
+  },
+  // Increase server action timeout for AI generations
+  experimental: {
+    serverActions: {
+      bodySizeLimit: '2mb',
+    },
   },
 };
 

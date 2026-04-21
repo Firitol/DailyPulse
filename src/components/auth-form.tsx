@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { useAuth, useFirestore } from '@/firebase';
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile, sendPasswordResetEmail } from 'firebase/auth';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -17,6 +17,7 @@ export function AuthForm() {
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const [loading, setLoading] = useState(false);
+  const [resetLoading, setResetLoading] = useState(false);
   
   const auth = useAuth();
   const db = useFirestore();
@@ -56,6 +57,34 @@ export function AuthForm() {
     }
   };
 
+  const handleForgotPassword = async () => {
+    if (!email) {
+      toast({
+        variant: "destructive",
+        title: t.toastError,
+        description: t.enterEmail,
+      });
+      return;
+    }
+
+    setResetLoading(true);
+    try {
+      await sendPasswordResetEmail(auth, email);
+      toast({
+        title: t.toastPasswordResetSent,
+        description: t.toastPasswordResetSentDesc,
+      });
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: t.toastError,
+        description: error.message,
+      });
+    } finally {
+      setResetLoading(false);
+    }
+  };
+
   return (
     <Card className="w-full max-w-md mx-auto">
       <CardHeader>
@@ -74,6 +103,7 @@ export function AuthForm() {
                 onChange={(e) => setName(e.target.value)} 
                 placeholder="John Doe" 
                 required 
+                autoComplete="name"
               />
             </div>
           )}
@@ -85,15 +115,29 @@ export function AuthForm() {
               onChange={(e) => setEmail(e.target.value)} 
               placeholder="name@example.com" 
               required 
+              autoComplete="email"
             />
           </div>
           <div className="space-y-2">
-            <label className="text-sm font-medium">{t.password}</label>
+            <div className="flex items-center justify-between">
+              <label className="text-sm font-medium">{t.password}</label>
+              {isLogin && (
+                <button
+                  type="button"
+                  onClick={handleForgotPassword}
+                  className="text-xs text-primary hover:underline"
+                  disabled={resetLoading}
+                >
+                  {resetLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : t.forgotPassword}
+                </button>
+              )}
+            </div>
             <Input 
               type="password" 
               value={password} 
               onChange={(e) => setPassword(e.target.value)} 
               required 
+              autoComplete={isLogin ? "current-password" : "new-password"}
             />
           </div>
         </CardContent>

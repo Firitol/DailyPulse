@@ -2,10 +2,39 @@ export type MoodType = 'Happy' | 'Calm' | 'Stressed' | 'Sad' | 'Angry' | 'Motiva
 
 export interface MoodEntry {
   id: string;
+  userId: string;
   mood: MoodType;
-  date: string; // ISO string
+  date: string; // YYYY-MM-DD
+  createdAt: string; // ISO string
   message?: string;
   suggestions?: string[];
+  moodGuideMessageId: string;
+}
+
+export interface UserProfile {
+  id: string;
+  name: string;
+  email: string;
+  avatarUrl: string;
+  createdAt: string;
+  onboardingCompleted: boolean;
+}
+
+export interface Post {
+  id: string;
+  userId: string;
+  userName: string;
+  userAvatarUrl: string;
+  content: string;
+  createdAt: string;
+  likeCount: number;
+}
+
+export interface Like {
+  id: string;
+  userId: string;
+  postId: string;
+  createdAt: string;
 }
 
 export const MOODS: { label: MoodType; emoji: string; color: string }[] = [

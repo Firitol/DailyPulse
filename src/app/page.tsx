@@ -1,9 +1,8 @@
-
 "use client"
 
-import React, { useState, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { useUser, useFirestore, useDoc } from '@/firebase';
-import { doc, setDoc } from 'firebase/firestore';
+import { doc } from 'firebase/firestore';
 import { UserProfile } from '@/lib/types';
 import { AuthForm } from '@/components/auth-form';
 import { Toaster } from '@/components/ui/toaster';
@@ -20,7 +19,8 @@ export default function DailyPulse() {
   const db = useFirestore();
 
   // Fetch user profile to determine role
-  const userDocRef = useMemoFirebase(() => user ? doc(db, 'users', user.uid) : null, [db, user]);
+  // Added !db guard to prevent crashing during SSR
+  const userDocRef = useMemoFirebase(() => (user && db) ? doc(db, 'users', user.uid) : null, [db, user]);
   const { data: profile, isLoading: isProfileLoading } = useDoc<UserProfile>(userDocRef);
 
   if (isUserLoading || (user && isProfileLoading)) {

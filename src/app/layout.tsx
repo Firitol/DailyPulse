@@ -4,7 +4,7 @@ import "./globals.css";
 import { LanguageProvider } from "@/lib/i18n/context";
 import { FirebaseClientProvider } from "@/firebase/client-provider";
 
-const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
+const inter = Inter({ subsets: ['latin'], variable: '--font-inter', display: 'swap' });
 
 export const metadata: Metadata = {
   title: "DailyPulse | Mental Wellness Companion",
@@ -21,7 +21,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#4f46e5",
+  themeColor: "#4D5EA3",
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,

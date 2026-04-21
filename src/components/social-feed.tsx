@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { useCollection, useFirestore, useUser } from '@/firebase';
-import { collection, query, orderBy, limit, doc, setDoc, deleteDoc, getDoc } from 'firebase/firestore';
+import { collection, query, orderBy, limit, doc, setDoc, deleteDoc } from 'firebase/firestore';
 import { Card, CardContent, CardHeader, CardFooter } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -18,6 +18,7 @@ export function SocialFeed() {
   const { t } = useLanguage();
 
   const postsQuery = useMemoFirebase(() => {
+    if (!db) return null;
     return query(collection(db, 'posts'), orderBy('createdAt', 'desc'), limit(20));
   }, [db]);
 
@@ -50,13 +51,16 @@ export function SocialFeed() {
 function PostCard({ post, userId }: { post: Post; userId?: string }) {
   const db = useFirestore();
   const likeRef = useMemoFirebase(() => {
-    if (!userId) return null;
+    if (!userId || !db) return null;
     return doc(db, 'posts', post.id, 'likes', userId);
   }, [db, post.id, userId]);
 
-  const { data: likeData } = useCollection<Like>(useMemoFirebase(() => {
+  const likesQuery = useMemoFirebase(() => {
+    if (!db) return null;
     return query(collection(db, 'posts', post.id, 'likes'));
-  }, [db, post.id]));
+  }, [db, post.id]);
+
+  const { data: likeData } = useCollection<Like>(likesQuery);
 
   const hasLiked = likeData?.some(l => l.userId === userId);
 

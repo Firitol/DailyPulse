@@ -1,4 +1,3 @@
-
 "use client"
 
 import React, { useState } from 'react';
@@ -56,8 +55,8 @@ export function OnboardingTour({ userId, isOpen, onClose }: OnboardingTourProps)
           <DialogTitle className="text-center text-2xl font-bold text-primary">
             {currentStep.title}
           </DialogTitle>
-          <DialogDescription className="sr-only">
-            Step {step + 1} of the onboarding tour: {currentStep.title}
+          <DialogDescription className="text-center text-muted-foreground mt-2">
+            Step {step + 1} of {steps.length}: {currentStep.title}
           </DialogDescription>
         </DialogHeader>
         <div className="py-8 px-2">

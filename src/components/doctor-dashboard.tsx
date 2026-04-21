@@ -1,4 +1,3 @@
-
 "use client"
 
 import React, { useState } from 'react';
@@ -28,13 +27,16 @@ export function DoctorDashboard({ profile }: { profile: UserProfile }) {
 
   // Fetch all assignments for this doctor
   const assignmentsQuery = useMemoFirebase(() => {
-    if (!user) return null;
+    if (!user || !db) return null;
     return query(collection(db, 'assignments'), where('doctorId', '==', user.uid));
   }, [db, user]);
   const { data: assignments } = useCollection<Assignment>(assignmentsQuery);
 
   // Fetch all users to map patient IDs to names
-  const usersQuery = useMemoFirebase(() => collection(db, 'users'), [db]);
+  const usersQuery = useMemoFirebase(() => {
+    if (!db) return null;
+    return collection(db, 'users');
+  }, [db]);
   const { data: allUsers } = useCollection<UserProfile>(usersQuery);
 
   // Derived patient lists
@@ -45,13 +47,13 @@ export function DoctorDashboard({ profile }: { profile: UserProfile }) {
 
   // Fetch data for the selected patient
   const patientMoodsQuery = useMemoFirebase(() => {
-    if (!selectedPatientId) return null;
+    if (!selectedPatientId || !db) return null;
     return query(collection(db, 'users', selectedPatientId, 'moodEntries'), orderBy('createdAt', 'desc'));
   }, [db, selectedPatientId]);
   const { data: patientMoods } = useCollection<MoodEntry>(patientMoodsQuery);
 
   const notesQuery = useMemoFirebase(() => {
-    if (!user || !selectedPatientId) return null;
+    if (!user || !selectedPatientId || !db) return null;
     return query(
       collection(db, 'doctorNotes'), 
       where('doctorId', '==', user.uid),

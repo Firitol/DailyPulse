@@ -1,12 +1,11 @@
-
 {
   "name": "DailyPulse",
   "short_name": "DailyPulse",
-  "description": "Your daily companion for emotional clarity and growth.",
+  "description": "Your daily companion for mood tracking and emotional wellness.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#f8fafc",
-  "theme_color": "#4f46e5",
+  "background_color": "#F0F2F9",
+  "theme_color": "#4D5EA3",
   "icons": [
     {
       "src": "/icon.svg",

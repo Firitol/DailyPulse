@@ -1,9 +1,8 @@
-
 "use client"
 
 import React, { useState, useEffect } from 'react';
 import { useUser, useFirestore, useCollection, useAuth, useMemoFirebase, setDocumentNonBlocking } from '@/firebase';
-import { collection, query, orderBy, limit, doc, where } from 'firebase/firestore';
+import { collection, query, orderBy, limit, doc } from 'firebase/firestore';
 import { isToday } from 'date-fns';
 import { MoodType, MoodEntry, UserProfile, Assignment, DoctorProfile, DoctorNote } from '@/lib/types';
 import { MoodSelector } from '@/components/mood-selector';
@@ -37,23 +36,26 @@ export function PatientDashboard({ profile }: { profile: UserProfile }) {
   const [searchDoctor, setSearchDoctor] = useState('');
 
   const moodsQuery = useMemoFirebase(() => {
-    if (!user) return null;
+    if (!user || !db) return null;
     return query(collection(db, 'users', user.uid, 'moodEntries'), orderBy('createdAt', 'desc'), limit(30));
   }, [db, user]);
   const { data: entries } = useCollection<MoodEntry>(moodsQuery);
 
   // Simplified queries for MVP to avoid index issues
   const assignmentsQuery = useMemoFirebase(() => {
-    if (!user) return null;
+    if (!user || !db) return null;
     return collection(db, 'assignments');
   }, [db, user]);
   const { data: rawAssignments } = useCollection<Assignment>(assignmentsQuery);
 
-  const doctorsQuery = useMemoFirebase(() => collection(db, 'doctorProfiles'), [db]);
+  const doctorsQuery = useMemoFirebase(() => {
+    if (!db) return null;
+    return collection(db, 'doctorProfiles');
+  }, [db]);
   const { data: allDoctors } = useCollection<DoctorProfile>(doctorsQuery);
 
   const notesQuery = useMemoFirebase(() => {
-    if (!user) return null;
+    if (!user || !db) return null;
     return query(collection(db, 'doctorNotes'), orderBy('createdAt', 'desc'));
   }, [db, user]);
   const { data: rawDoctorNotes } = useCollection<DoctorNote>(notesQuery);

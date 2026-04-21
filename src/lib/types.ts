@@ -29,6 +29,7 @@ export interface DoctorProfile {
   name: string;
   specialization: string;
   bio: string;
+  isVerified: boolean;
 }
 
 export interface Assignment {

@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { useLanguage } from '@/lib/i18n/context';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, User as UserIcon, Stethoscope } from 'lucide-react';
+import { Loader2, User as UserIcon, Stethoscope, Mail } from 'lucide-react';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { UserRole } from '@/lib/types';
@@ -22,12 +22,24 @@ export function AuthForm() {
   const [name, setName] = useState('');
   const [role, setRole] = useState<UserRole>('patient');
   const [loading, setLoading] = useState(false);
-  const [resetLoading, setResetLoading] = useState(false);
   
   const auth = useAuth();
   const db = useFirestore();
   const { t } = useLanguage();
   const { toast } = useToast();
+
+  const handleResetPassword = async () => {
+    if (!email) {
+      toast({ variant: "destructive", title: t.enterEmail });
+      return;
+    }
+    try {
+      await sendPasswordResetEmail(auth, email);
+      toast({ title: t.toastPasswordResetSent, description: t.toastPasswordResetSentDesc });
+    } catch (error: any) {
+      toast({ variant: "destructive", title: t.toastError, description: error.message });
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -58,8 +70,9 @@ export function AuthForm() {
           await setDoc(doc(db, 'doctorProfiles', user.uid), {
             userId: user.uid,
             name,
-            specialization: 'General Mental Health',
-            bio: 'Dedicated mental health professional.'
+            specialization: 'General Practice',
+            bio: 'Passionate about mental wellness.',
+            isVerified: false
           });
         }
       }
@@ -97,15 +110,15 @@ export function AuthForm() {
                 />
               </div>
               <div className="space-y-3 pt-2">
-                <label className="text-sm font-medium">Select your role</label>
+                <label className="text-sm font-medium">I am a...</label>
                 <RadioGroup value={role} onValueChange={(v) => setRole(v as UserRole)} className="flex gap-4">
-                  <div className="flex items-center space-x-2 bg-muted/50 p-3 rounded-xl flex-1 cursor-pointer">
+                  <div className="flex items-center space-x-2 bg-muted/50 p-3 rounded-xl flex-1 cursor-pointer transition-colors hover:bg-muted">
                     <RadioGroupItem value="patient" id="patient" />
                     <Label htmlFor="patient" className="flex items-center gap-2 cursor-pointer w-full">
                       <UserIcon className="h-4 w-4" /> Patient
                     </Label>
                   </div>
-                  <div className="flex items-center space-x-2 bg-muted/50 p-3 rounded-xl flex-1 cursor-pointer">
+                  <div className="flex items-center space-x-2 bg-muted/50 p-3 rounded-xl flex-1 cursor-pointer transition-colors hover:bg-muted">
                     <RadioGroupItem value="doctor" id="doctor" />
                     <Label htmlFor="doctor" className="flex items-center gap-2 cursor-pointer w-full">
                       <Stethoscope className="h-4 w-4" /> Doctor
@@ -132,7 +145,7 @@ export function AuthForm() {
               {isLogin && (
                 <button
                   type="button"
-                  onClick={() => {}} // Reset password logic
+                  onClick={handleResetPassword}
                   className="text-xs text-primary hover:underline"
                 >
                   {t.forgotPassword}

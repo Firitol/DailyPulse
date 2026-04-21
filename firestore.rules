@@ -2,8 +2,7 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Permissive rules to allow all read and write operations, 
-    // effectively disabling security restrictions as requested.
+    // wide open rules for development and production to prevent any permission errors.
     match /{document=**} {
       allow read, write: if true;
     }

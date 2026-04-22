@@ -1,3 +1,4 @@
+
 "use client"
 
 import React, { useState, useEffect } from 'react';
@@ -19,16 +20,18 @@ import { LanguageToggle } from '@/components/language-toggle';
 import { useLanguage } from '@/lib/i18n/context';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { LogOut, Settings, LayoutDashboard, MessageSquare, History as HistoryIcon, Stethoscope, Search, Loader2, Sparkles, BookOpen, Wind } from 'lucide-react';
+import { LogOut, Settings, LayoutDashboard, MessageSquare, History as HistoryIcon, Stethoscope, Search, Loader2, Sparkles, BookOpen, Wind, Lightbulb } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { SupportChat } from '@/components/support-chat';
 import { BreathingTool } from '@/components/breathing-tool';
 import { JournalTool } from '@/components/journal-tool';
 import { ThoughtReframer } from '@/components/thought-reframer';
+import { DailyTipWidget } from '@/components/daily-tip-widget';
+import { TipsLibrary } from '@/components/tips-library';
 
 export function PatientDashboard({ profile }: { profile: UserProfile }) {
-  const { user } = useUser();
+  const { user } = userHook();
   const { t, language } = useLanguage();
   const db = useFirestore();
   const auth = useAuth();
@@ -38,6 +41,11 @@ export function PatientDashboard({ profile }: { profile: UserProfile }) {
   const [showTour, setShowTour] = useState(false);
   const [searchDoctor, setSearchDoctor] = useState('');
   const [todayStr, setTodayStr] = useState<string | null>(null);
+
+  function userHook() {
+    const { user, isUserLoading } = useUser();
+    return { user, isUserLoading };
+  }
 
   useEffect(() => {
     setTodayStr(new Date().toISOString().split('T')[0]);
@@ -90,7 +98,7 @@ export function PatientDashboard({ profile }: { profile: UserProfile }) {
       try {
         const guide = await generateMoodGuide({ 
           mood, 
-          language: (languageMap[language] || 'English') as any
+          language: (languageMap[language as keyof typeof languageMap] || 'English') as any
         });
         supportiveMessage = guide.supportiveMessage;
         suggestions = guide.suggestions;
@@ -156,9 +164,10 @@ export function PatientDashboard({ profile }: { profile: UserProfile }) {
         {profile && user && <OnboardingTour userId={user.uid} isOpen={showTour} onClose={() => setShowTour(false)} />}
 
         <Tabs defaultValue="dashboard" className="w-full">
-          <TabsList className="grid w-full grid-cols-5 mb-8 bg-muted/50 rounded-full p-1 h-12">
+          <TabsList className="grid w-full grid-cols-3 sm:flex sm:flex-wrap mb-8 bg-muted/50 rounded-full sm:rounded-2xl p-1 h-auto sm:h-12">
             <TabsTrigger value="dashboard" className="rounded-full gap-2"><LayoutDashboard className="h-4 w-4" /> <span className="hidden sm:inline">Home</span></TabsTrigger>
             <TabsTrigger value="tools" className="rounded-full gap-2"><Wind className="h-4 w-4" /> <span className="hidden sm:inline">Tools</span></TabsTrigger>
+            <TabsTrigger value="tips" className="rounded-full gap-2"><Lightbulb className="h-4 w-4" /> <span className="hidden sm:inline">Tips</span></TabsTrigger>
             <TabsTrigger value="insights" className="rounded-full gap-2"><Sparkles className="h-4 w-4" /> <span className="hidden sm:inline">Insights</span></TabsTrigger>
             <TabsTrigger value="community" className="rounded-full gap-2"><MessageSquare className="h-4 w-4" /> <span className="hidden sm:inline">Community</span></TabsTrigger>
             <TabsTrigger value="doctor" className="rounded-full gap-2"><Stethoscope className="h-4 w-4" /> <span className="hidden sm:inline">Doctor</span></TabsTrigger>
@@ -169,6 +178,8 @@ export function PatientDashboard({ profile }: { profile: UserProfile }) {
               <h2 className="text-3xl font-bold">Hello, {user?.displayName?.split(' ')[0] || 'User'}</h2>
               <p className="text-muted-foreground">{t.tagline}</p>
             </header>
+
+            <DailyTipWidget />
 
             {!todayEntry && !isMoodsLoading && <ReminderBanner onDismiss={() => {}} />}
 
@@ -215,6 +226,10 @@ export function PatientDashboard({ profile }: { profile: UserProfile }) {
                 </CardContent>
               </Card>
             </section>
+          </TabsContent>
+
+          <TabsContent value="tips" className="space-y-8">
+            <TipsLibrary />
           </TabsContent>
 
           <TabsContent value="tools" className="space-y-8">

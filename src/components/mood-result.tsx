@@ -1,10 +1,12 @@
+
 "use client"
 
 import React from 'react';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { Sparkles, Lightbulb, Heart } from 'lucide-react';
+import { Sparkles, Lightbulb, Heart, Info } from 'lucide-react';
 import { GenerateMoodGuideOutput } from '@/ai/flows/generate-mood-guide';
 import { useLanguage } from '@/lib/i18n/context';
+import { getTipByMood } from '@/lib/wellness-tips';
 
 interface MoodResultProps {
   result: GenerateMoodGuideOutput;
@@ -12,7 +14,9 @@ interface MoodResultProps {
 }
 
 export function MoodResult({ result, mood }: MoodResultProps) {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
+  const moodTip = getTipByMood(mood, language as any);
+
   return (
     <Card className="border-none shadow-lg bg-white overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-700">
       <div className="h-2 bg-gradient-to-r from-primary to-secondary" />
@@ -33,6 +37,13 @@ export function MoodResult({ result, mood }: MoodResultProps) {
             </p>
           </div>
         </div>
+
+        {moodTip && (
+          <div className="bg-primary/5 p-4 rounded-2xl border border-primary/10 flex gap-3">
+            <Info className="h-5 w-5 text-primary shrink-0" />
+            <p className="text-sm font-medium italic">"{moodTip}"</p>
+          </div>
+        )}
 
         <div className="space-y-3">
           <div className="flex items-center gap-2 text-sm font-semibold text-muted-foreground uppercase tracking-wider">

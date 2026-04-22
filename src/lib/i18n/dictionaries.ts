@@ -1,3 +1,4 @@
+
 export type Language = "en" | "om" | "am";
 
 export const dictionaries = {
@@ -78,6 +79,7 @@ export const dictionaries = {
     reframerThought: "What is your negative thought?",
     reframerAlternative: "What is a more balanced thought?",
     saveReframing: "Save Reframing",
+    wellnessTips: "MindShift Guidance",
   },
   om: {
     appTitle: "DailyPulse",
@@ -144,6 +146,7 @@ export const dictionaries = {
     breathing: "Shaakala Hargansuu",
     journal: "Galmee Guyyaa",
     saveJournal: "Galmeessi",
+    wellnessTips: "Gorsa MindShift",
   },
   am: {
     appTitle: "DailyPulse",
@@ -210,5 +213,6 @@ export const dictionaries = {
     breathing: "የአተነፋፈስ ልምምድ",
     journal: "የዕለት ማስታወሻ",
     saveJournal: "መዝግብ",
+    wellnessTips: "የMindShift ምክሮች",
   },
 };

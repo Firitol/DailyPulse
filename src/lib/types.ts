@@ -65,6 +65,17 @@ export interface Like {
   createdAt: string;
 }
 
+export interface WellnessTip {
+  id: string;
+  category: 'stress' | 'motivation' | 'focus' | 'balance';
+  mood?: MoodType;
+  content: {
+    en: string;
+    om: string;
+    am: string;
+  };
+}
+
 export const MOODS: { label: MoodType; emoji: string; color: string }[] = [
   { label: 'Happy', emoji: '😊', color: 'bg-yellow-100 text-yellow-700' },
   { label: 'Calm', emoji: '😌', color: 'bg-blue-100 text-blue-700' },

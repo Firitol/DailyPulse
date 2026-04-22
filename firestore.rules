@@ -2,40 +2,12 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-
-    // Helper: Check if user is signed in
-    function isSignedIn() {
-      return request.auth != null;
-    }
-
-    // Helper: Check if user matches UID
-    function isUser(userId) {
-      return isSignedIn() && request.auth.uid == userId;
-    }
-
-    // --- Permissive rules for development ---
-    // This allows the app to function while we refine the role-based access logic.
+    /**
+     * Permissive rules for development.
+     * This allows any authenticated or unauthenticated user to read and write to any document.
+     * Deployment timestamp: 2024-05-22T12:00:00Z (Triggering fresh deployment)
+     */
     match /{document=**} {
-      allow read, write: if true;
-    }
-
-    // Explicit matches for clarity (optional when blanket rule is active)
-    match /users/{userId} {
-      allow read, write: if true;
-    }
-    match /doctorProfiles/{profileId} {
-      allow read, write: if true;
-    }
-    match /assignments/{id} {
-      allow read, write: if true;
-    }
-    match /doctorNotes/{id} {
-      allow read, write: if true;
-    }
-    match /posts/{id} {
-      allow read, write: if true;
-    }
-    match /posts/{id}/likes/{uid} {
       allow read, write: if true;
     }
   }

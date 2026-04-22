@@ -1,4 +1,3 @@
-
 "use client"
 
 import React, { useState, useEffect } from 'react';
@@ -20,10 +19,13 @@ import { LanguageToggle } from '@/components/language-toggle';
 import { useLanguage } from '@/lib/i18n/context';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { LogOut, Settings, LayoutDashboard, MessageSquare, History as HistoryIcon, Stethoscope, Search, Loader2 } from 'lucide-react';
+import { LogOut, Settings, LayoutDashboard, MessageSquare, History as HistoryIcon, Stethoscope, Search, Loader2, Sparkles, BookOpen, Wind } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { SupportChat } from '@/components/support-chat';
+import { BreathingTool } from '@/components/breathing-tool';
+import { JournalTool } from '@/components/journal-tool';
+import { ThoughtReframer } from '@/components/thought-reframer';
 
 export function PatientDashboard({ profile }: { profile: UserProfile }) {
   const { user } = useUser();
@@ -61,7 +63,6 @@ export function PatientDashboard({ profile }: { profile: UserProfile }) {
 
   const notesQuery = useMemoFirebase(() => {
     if (!user || !db) return null;
-    // Optimized: Only fetch notes intended for this patient
     return query(collection(db, 'doctorNotes'), where('patientId', '==', user.uid));
   }, [db, user]);
   const { data: doctorNotes } = useCollection<DoctorNote>(notesQuery);
@@ -155,11 +156,12 @@ export function PatientDashboard({ profile }: { profile: UserProfile }) {
         {profile && user && <OnboardingTour userId={user.uid} isOpen={showTour} onClose={() => setShowTour(false)} />}
 
         <Tabs defaultValue="dashboard" className="w-full">
-          <TabsList className="grid w-full grid-cols-4 mb-8 bg-muted/50 rounded-full p-1 h-12">
-            <TabsTrigger value="dashboard" className="rounded-full gap-2"><LayoutDashboard className="h-4 w-4" /> <span className="hidden sm:inline">Dashboard</span></TabsTrigger>
+          <TabsList className="grid w-full grid-cols-5 mb-8 bg-muted/50 rounded-full p-1 h-12">
+            <TabsTrigger value="dashboard" className="rounded-full gap-2"><LayoutDashboard className="h-4 w-4" /> <span className="hidden sm:inline">Home</span></TabsTrigger>
+            <TabsTrigger value="tools" className="rounded-full gap-2"><Wind className="h-4 w-4" /> <span className="hidden sm:inline">Tools</span></TabsTrigger>
+            <TabsTrigger value="insights" className="rounded-full gap-2"><Sparkles className="h-4 w-4" /> <span className="hidden sm:inline">Insights</span></TabsTrigger>
+            <TabsTrigger value="community" className="rounded-full gap-2"><MessageSquare className="h-4 w-4" /> <span className="hidden sm:inline">Community</span></TabsTrigger>
             <TabsTrigger value="doctor" className="rounded-full gap-2"><Stethoscope className="h-4 w-4" /> <span className="hidden sm:inline">Doctor</span></TabsTrigger>
-            <TabsTrigger value="community" className="rounded-full gap-2"><MessageSquare className="h-4 w-4" /> <span className="hidden sm:inline">{t.community}</span></TabsTrigger>
-            <TabsTrigger value="history" className="rounded-full gap-2"><HistoryIcon className="h-4 w-4" /> <span className="hidden sm:inline">{t.history}</span></TabsTrigger>
           </TabsList>
 
           <TabsContent value="dashboard" className="space-y-10">
@@ -193,17 +195,62 @@ export function PatientDashboard({ profile }: { profile: UserProfile }) {
               )}
             </section>
 
-            <section>
-              <h3 className="text-xl font-semibold mb-6">{t.insights}</h3>
-              {isMoodsLoading ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <Skeleton className="h-32 rounded-2xl" />
-                  <Skeleton className="h-32 rounded-2xl" />
-                </div>
-              ) : (
-                <MoodInsights entries={entries || []} />
-              )}
+            <section className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <Card className="border-none shadow-sm bg-primary/5 hover:bg-primary/10 transition-colors cursor-pointer" onClick={() => {}}>
+                <CardContent className="p-6 flex items-center gap-4">
+                  <div className="bg-primary text-white p-3 rounded-2xl"><BookOpen className="h-6 w-6" /></div>
+                  <div>
+                    <h4 className="font-bold">Wellness Guides</h4>
+                    <p className="text-sm text-muted-foreground">Expert advice for mental clarity.</p>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card className="border-none shadow-sm bg-secondary/5 hover:bg-secondary/10 transition-colors cursor-pointer" onClick={() => {}}>
+                <CardContent className="p-6 flex items-center gap-4">
+                  <div className="bg-secondary text-white p-3 rounded-2xl"><Wind className="h-6 w-6" /></div>
+                  <div>
+                    <h4 className="font-bold">Daily Tools</h4>
+                    <p className="text-sm text-muted-foreground">Quick exercises for stress relief.</p>
+                  </div>
+                </CardContent>
+              </Card>
             </section>
+          </TabsContent>
+
+          <TabsContent value="tools" className="space-y-8">
+            <header>
+              <h2 className="text-2xl font-bold">{t.tools}</h2>
+              <p className="text-muted-foreground">Interactive tools to help you navigate your day.</p>
+            </header>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div className="space-y-8">
+                <BreathingTool />
+                <ThoughtReframer />
+              </div>
+              <div className="space-y-8">
+                <JournalTool />
+              </div>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="insights" className="space-y-10">
+            <header>
+              <h2 className="text-2xl font-bold">{t.insights}</h2>
+              <p className="text-muted-foreground">{t.weeklySummary}</p>
+            </header>
+            
+            {isMoodsLoading ? (
+              <div className="space-y-4">
+                <Skeleton className="h-48 rounded-2xl" />
+                <Skeleton className="h-64 rounded-2xl" />
+              </div>
+            ) : (
+              <div className="space-y-10">
+                <MoodInsights entries={entries || []} />
+                <MoodHistory entries={entries || []} />
+              </div>
+            )}
           </TabsContent>
 
           <TabsContent value="doctor" className="space-y-6">
@@ -273,10 +320,6 @@ export function PatientDashboard({ profile }: { profile: UserProfile }) {
           <TabsContent value="community" className="space-y-6">
             <CreatePost />
             <SocialFeed />
-          </TabsContent>
-
-          <TabsContent value="history">
-            <MoodHistory entries={entries || []} />
           </TabsContent>
         </Tabs>
       </div>

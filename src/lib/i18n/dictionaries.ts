@@ -79,7 +79,7 @@ export const dictionaries = {
     reframerThought: "What is your negative thought?",
     reframerAlternative: "What is a more balanced thought?",
     saveReframing: "Save Reframing",
-    wellnessTips: "MindShift Guidance",
+    wellnessTips: "DailyPulse Guidance",
   },
   om: {
     appTitle: "DailyPulse",
@@ -146,7 +146,7 @@ export const dictionaries = {
     breathing: "Shaakala Hargansuu",
     journal: "Galmee Guyyaa",
     saveJournal: "Galmeessi",
-    wellnessTips: "Gorsa MindShift",
+    wellnessTips: "Gorsa DailyPulse",
   },
   am: {
     appTitle: "DailyPulse",
@@ -213,6 +213,6 @@ export const dictionaries = {
     breathing: "የአተነፋፈስ ልምምድ",
     journal: "የዕለት ማስታወሻ",
     saveJournal: "መዝግብ",
-    wellnessTips: "የMindShift ምክሮች",
+    wellnessTips: "የDailyPulse ምክሮች",
   },
 };

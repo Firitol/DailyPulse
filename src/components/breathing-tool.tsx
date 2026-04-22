@@ -54,14 +54,23 @@ export function BreathingTool() {
       }, 1000);
     }
     return () => clearInterval(interval);
-  }, [isActive, phase, isVoiceEnabled]);
+  }, [isActive, phase, isVoiceEnabled, t]);
 
   const toggleBreathing = async () => {
     if (!isActive) {
+      // Unlock audio for browser (prevents autoplay block)
+      if (!audioRef.current) {
+        audioRef.current = new Audio();
+      }
+      audioRef.current.play().catch(() => {}).then(() => {
+        if (audioRef.current) audioRef.current.pause();
+      });
+
       // Reset if starting fresh or restarting
       if (sessionTimer <= 0) {
         setSessionTimer(SESSION_TOTAL_SECONDS);
       }
+      
       if (isVoiceEnabled) {
         await playPhaseAudio('inhale');
       }

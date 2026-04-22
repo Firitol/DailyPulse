@@ -9,7 +9,6 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
-import {googleAI} from '@genkit-ai/google-genai';
 import wav from 'wav';
 
 const BreathingAudioInputSchema = z.object({
@@ -34,12 +33,12 @@ const generateBreathingAudioFlow = ai.defineFlow(
   },
   async (input) => {
     const { media } = await ai.generate({
-      model: googleAI.model('gemini-2.5-flash-preview-tts'),
+      model: 'googleai/gemini-2.5-flash-preview-tts',
       config: {
         responseModalities: ['AUDIO'],
         speechConfig: {
           voiceConfig: {
-            prebuiltVoiceConfig: { voiceName: 'Pherkad' }, // Soft female meditation-style voice
+            prebuiltVoiceConfig: { voiceName: 'Algenib' }, // Reliable female meditation trainer voice
           },
         },
       },
@@ -76,7 +75,7 @@ async function toWav(
       bitDepth: sampleWidth * 8,
     });
 
-    let bufs: Buffer[] = [];
+    let bufs: any[] = [];
     writer.on('error', reject);
     writer.on('data', (d) => {
       bufs.push(d);

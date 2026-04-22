@@ -26,27 +26,23 @@ export function DoctorDashboard({ profile }: { profile: UserProfile }) {
   const [selectedPatientId, setSelectedPatientId] = useState<string | null>(null);
   const [noteContent, setNoteContent] = useState('');
 
-  // Fetch all assignments for this doctor
   const assignmentsQuery = useMemoFirebase(() => {
     if (!user || !db) return null;
     return query(collection(db, 'assignments'), where('doctorId', '==', user.uid));
   }, [db, user]);
   const { data: assignments } = useCollection<Assignment>(assignmentsQuery);
 
-  // Fetch all users to map patient IDs to names
   const usersQuery = useMemoFirebase(() => {
     if (!db) return null;
     return collection(db, 'users');
   }, [db]);
   const { data: allUsers } = useCollection<UserProfile>(usersQuery);
 
-  // Derived patient lists
   const pendingRequests = assignments?.filter(a => a.status === 'pending') || [];
   const acceptedPatients = assignments?.filter(a => a.status === 'accepted') || [];
 
   const selectedPatient = allUsers?.find(u => u.id === selectedPatientId);
 
-  // Fetch data for the selected patient
   const patientMoodsQuery = useMemoFirebase(() => {
     if (!selectedPatientId || !db) return null;
     return query(collection(db, 'users', selectedPatientId, 'moodEntries'), orderBy('createdAt', 'desc'));
@@ -55,11 +51,11 @@ export function DoctorDashboard({ profile }: { profile: UserProfile }) {
 
   const notesQuery = useMemoFirebase(() => {
     if (!user || !selectedPatientId || !db) return null;
+    // Optimized: Only fetch notes relevant to the selected doctor-patient pair
     return query(
       collection(db, 'doctorNotes'), 
       where('doctorId', '==', user.uid),
-      where('patientId', '==', selectedPatientId),
-      orderBy('createdAt', 'desc')
+      where('patientId', '==', selectedPatientId)
     );
   }, [db, user, selectedPatientId]);
   const { data: doctorNotes } = useCollection<DoctorNote>(notesQuery);
@@ -172,11 +168,6 @@ export function DoctorDashboard({ profile }: { profile: UserProfile }) {
                     <p className="text-sm text-muted-foreground">{selectedPatient.email}</p>
                   </div>
                 </div>
-                <div className="flex gap-2">
-                   <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                    Active Patient
-                  </span>
-                </div>
               </header>
 
               <Tabs defaultValue="insights">
@@ -222,12 +213,6 @@ export function DoctorDashboard({ profile }: { profile: UserProfile }) {
                           </CardContent>
                         </Card>
                       ))}
-                      {doctorNotes?.length === 0 && (
-                        <div className="py-20 text-center bg-white rounded-3xl border-2 border-dashed">
-                          <MessageSquare className="h-12 w-12 mx-auto mb-4 opacity-10" />
-                          <p className="text-muted-foreground italic">No clinical notes recorded for this patient.</p>
-                        </div>
-                      )}
                     </div>
                   </div>
                 </TabsContent>

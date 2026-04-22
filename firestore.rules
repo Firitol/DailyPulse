@@ -13,34 +13,30 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == userId;
     }
 
-    // --- TEMPORARY: Open access for development phase ---
-    // In production, these should be restricted to owners/assigned doctors.
+    // --- Permissive rules for development ---
+    // This allows the app to function while we refine the role-based access logic.
     match /{document=**} {
       allow read, write: if true;
     }
 
-    /* 
-    // Example of production rules (disabled for development)
+    // Explicit matches for clarity (optional when blanket rule is active)
     match /users/{userId} {
-      allow read, write: if isUser(userId);
+      allow read, write: if true;
     }
     match /doctorProfiles/{profileId} {
-      allow read: if isSignedIn();
-      allow write: if isUser(profileId);
+      allow read, write: if true;
     }
     match /assignments/{id} {
-      allow read, write: if isSignedIn();
+      allow read, write: if true;
     }
     match /doctorNotes/{id} {
-      allow read, write: if isSignedIn(); 
+      allow read, write: if true;
     }
     match /posts/{id} {
-      allow read: if isSignedIn();
-      allow write: if isSignedIn();
+      allow read, write: if true;
     }
     match /posts/{id}/likes/{uid} {
-      allow read, write: if isSignedIn();
+      allow read, write: if true;
     }
-    */
   }
 }

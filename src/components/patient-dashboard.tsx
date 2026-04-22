@@ -3,7 +3,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useUser, useFirestore, useCollection, useAuth, useMemoFirebase, setDocumentNonBlocking } from '@/firebase';
-import { collection, query, orderBy, limit, doc } from 'firebase/firestore';
+import { collection, query, orderBy, limit, doc, where } from 'firebase/firestore';
 import { MoodType, MoodEntry, UserProfile, Assignment, DoctorProfile, DoctorNote } from '@/lib/types';
 import { MoodSelector } from '@/components/mood-selector';
 import { MoodResult } from '@/components/mood-result';
@@ -37,7 +37,6 @@ export function PatientDashboard({ profile }: { profile: UserProfile }) {
   const [searchDoctor, setSearchDoctor] = useState('');
   const [todayStr, setTodayStr] = useState<string | null>(null);
 
-  // Set today's date string on the client only to avoid hydration mismatch
   useEffect(() => {
     setTodayStr(new Date().toISOString().split('T')[0]);
   }, []);
@@ -50,9 +49,9 @@ export function PatientDashboard({ profile }: { profile: UserProfile }) {
 
   const assignmentsQuery = useMemoFirebase(() => {
     if (!user || !db) return null;
-    return collection(db, 'assignments');
+    return query(collection(db, 'assignments'), where('patientId', '==', user.uid));
   }, [db, user]);
-  const { data: rawAssignments } = useCollection<Assignment>(assignmentsQuery);
+  const { data: assignments } = useCollection<Assignment>(assignmentsQuery);
 
   const doctorsQuery = useMemoFirebase(() => {
     if (!db) return null;
@@ -62,16 +61,14 @@ export function PatientDashboard({ profile }: { profile: UserProfile }) {
 
   const notesQuery = useMemoFirebase(() => {
     if (!user || !db) return null;
-    return query(collection(db, 'doctorNotes'), orderBy('createdAt', 'desc'));
+    // Optimized: Only fetch notes intended for this patient
+    return query(collection(db, 'doctorNotes'), where('patientId', '==', user.uid));
   }, [db, user]);
-  const { data: rawDoctorNotes } = useCollection<DoctorNote>(notesQuery);
+  const { data: doctorNotes } = useCollection<DoctorNote>(notesQuery);
 
   const todayEntry = todayStr ? entries?.find(e => e.date === todayStr) : null;
-  
-  const assignments = rawAssignments?.filter(a => a.patientId === user?.uid);
   const myAssignment = assignments?.find(a => a.status === 'accepted');
   const myDoctor = allDoctors?.find(d => d.userId === myAssignment?.doctorId);
-  const doctorNotes = rawDoctorNotes?.filter(n => n.patientId === user?.uid);
 
   useEffect(() => {
     if (profile && !profile.onboardingCompleted) {
@@ -116,7 +113,6 @@ export function PatientDashboard({ profile }: { profile: UserProfile }) {
       
       toast({ title: t.toastCheckedIn });
     } catch (error: any) {
-      console.error("Check-in failed:", error);
       toast({ variant: "destructive", title: t.toastError, description: error.message });
     } finally {
       setIsCheckingIn(false);
@@ -185,12 +181,6 @@ export function PatientDashboard({ profile }: { profile: UserProfile }) {
                 selectedMood={todayEntry?.mood} 
                 disabled={isCheckingIn || !db} 
               />
-              
-              {isCheckingIn && (
-                <div className="space-y-4 animate-pulse">
-                  <Skeleton className="h-48 w-full rounded-2xl" />
-                </div>
-              )}
               
               {todayEntry && !isCheckingIn && (
                 <MoodResult 
@@ -275,7 +265,6 @@ export function PatientDashboard({ profile }: { profile: UserProfile }) {
                       </Card>
                     );
                   })}
-                  {allDoctors?.length === 0 && <p className="text-center py-12 text-muted-foreground">No doctors available yet.</p>}
                 </div>
               </div>
             )}
@@ -292,7 +281,6 @@ export function PatientDashboard({ profile }: { profile: UserProfile }) {
         </Tabs>
       </div>
       
-      {/* Floating Support Chat Component */}
       <SupportChat />
     </main>
   );

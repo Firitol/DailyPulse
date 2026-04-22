@@ -1,145 +1,114 @@
+
 {
   "entities": {
     "User": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "User",
       "type": "object",
-      "description": "Represents a user of the DailyPulse application. This entity only includes basic information necessary for internal relationships and does not store authentication credentials, which are handled by an external system.",
+      "description": "Represents a user of the DailyPulse application.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the User entity."
-        }
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "email": { "type": "string" },
+        "avatarUrl": { "type": "string" },
+        "role": { "type": "string", "enum": ["patient", "doctor"] },
+        "onboardingCompleted": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" }
       },
-      "required": [
-        "id"
-      ]
+      "required": ["id", "name", "email", "role"]
     },
-    "Mood": {
+    "DoctorProfile": {
       "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "Mood",
+      "title": "DoctorProfile",
       "type": "object",
-      "description": "Defines the predefined mood categories available for user selection in the DailyPulse application.",
+      "description": "Extended profile for users with the doctor role.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the Mood entity."
-        },
-        "name": {
-          "type": "string",
-          "description": "The name of the mood (e.g., 'Happy', 'Stressed')."
-        },
-        "description": {
-          "type": "string",
-          "description": "A brief, friendly description of the mood."
-        },
-        "emoji": {
-          "type": "string",
-          "description": "The emoji character or icon identifier representing the mood for UI display."
-        }
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "name": { "type": "string" },
+        "specialization": { "type": "string" },
+        "bio": { "type": "string" },
+        "isVerified": { "type": "boolean" }
       },
-      "required": [
-        "id",
-        "name",
-        "description",
-        "emoji"
-      ]
+      "required": ["userId", "name"]
     },
-    "MoodGuideResponseTemplate": {
+    "Assignment": {
       "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "MoodGuideResponseTemplate",
+      "title": "Assignment",
       "type": "object",
-      "description": "Stores pre-defined supportive messages and practical suggestions associated with a specific mood, allowing for variety and personalization in daily guide responses.",
+      "description": "Relationship between a patient and a doctor.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the MoodGuideResponseTemplate entity."
-        },
-        "moodId": {
-          "type": "string",
-          "description": "Reference to the Mood this response template is associated with. (Relationship: Mood 1:N MoodGuideResponseTemplate)"
-        },
-        "message": {
-          "type": "string",
-          "description": "A short, supportive message to be displayed to the user for the associated mood."
-        },
-        "suggestion1": {
-          "type": "string",
-          "description": "The first practical suggestion for the user, relevant to the associated mood."
-        },
-        "suggestion2": {
-          "type": "string",
-          "description": "The second practical suggestion for the user, relevant to the associated mood (optional)."
-        }
+        "id": { "type": "string" },
+        "patientId": { "type": "string" },
+        "doctorId": { "type": "string" },
+        "status": { "type": "string", "enum": ["pending", "accepted", "rejected"] },
+        "createdAt": { "type": "string", "format": "date-time" }
       },
-      "required": [
-        "id",
-        "moodId",
-        "message",
-        "suggestion1"
-      ]
+      "required": ["patientId", "doctorId", "status"]
+    },
+    "DoctorNote": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "DoctorNote",
+      "type": "object",
+      "description": "Clinical notes written by a doctor for a patient.",
+      "properties": {
+        "id": { "type": "string" },
+        "patientId": { "type": "string" },
+        "doctorId": { "type": "string" },
+        "content": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["patientId", "doctorId", "content"]
     },
     "UserMoodEntry": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "UserMoodEntry",
       "type": "object",
-      "description": "Records a user's daily mood check-in, including the selected mood and the specific guide response presented to them, providing a historical log.",
+      "description": "Records a user's daily mood check-in.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the UserMoodEntry entity."
-        },
-        "userId": {
-          "type": "string",
-          "description": "Reference to the User who made this mood entry. (Relationship: User 1:N UserMoodEntry)"
-        },
-        "moodId": {
-          "type": "string",
-          "description": "Reference to the Mood selected by the user for this entry. (Relationship: Mood 1:N UserMoodEntry)"
-        },
-        "entryDate": {
-          "type": "string",
-          "description": "The specific date (YYYY-MM-DD) when the user performed the mood check-in. Used to enforce one entry per day.",
-          "format": "date"
-        },
-        "selectedMessage": {
-          "type": "string",
-          "description": "The specific supportive message presented to the user for this entry, copied from a MoodGuideResponseTemplate to ensure historical accuracy."
-        },
-        "selectedSuggestion1": {
-          "type": "string",
-          "description": "The specific first practical suggestion presented to the user for this entry, copied for historical accuracy."
-        },
-        "selectedSuggestion2": {
-          "type": "string",
-          "description": "The specific second practical suggestion presented to the user for this entry (if applicable), copied for historical accuracy."
-        },
-        "createdAt": {
-          "type": "string",
-          "description": "Timestamp indicating when this mood entry record was first created.",
-          "format": "date-time"
-        },
-        "updatedAt": {
-          "type": "string",
-          "description": "Timestamp indicating when this mood entry record was last updated (e.g., if a user edits their daily mood).",
-          "format": "date-time"
-        }
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "mood": { "type": "string" },
+        "date": { "type": "string", "format": "date" },
+        "message": { "type": "string" },
+        "suggestions": { "type": "array", "items": { "type": "string" } },
+        "createdAt": { "type": "string", "format": "date-time" }
       },
-      "required": [
-        "id",
-        "userId",
-        "moodId",
-        "entryDate",
-        "selectedMessage",
-        "selectedSuggestion1",
-        "createdAt",
-        "updatedAt"
-      ]
+      "required": ["userId", "mood", "date", "createdAt"]
+    },
+    "Post": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Post",
+      "type": "object",
+      "description": "Social community post.",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "userName": { "type": "string" },
+        "userAvatarUrl": { "type": "string" },
+        "content": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "content", "createdAt"]
+    },
+    "Like": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Like",
+      "type": "object",
+      "description": "A like on a social post.",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "postId": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "postId"]
     }
   },
   "auth": {
     "providers": [
       "password",
+      "google.com",
       "anonymous"
     ]
   },
@@ -149,71 +118,58 @@
         "path": "/users/{userId}",
         "definition": {
           "entityName": "User",
-          "schema": {
-            "$ref": "#/backend/entities/User"
-          },
-          "description": "Stores core user profile data, indexed by their Firebase Authentication UID. This acts as the root for all user-specific subcollections, ensuring path-based ownership.",
-          "params": [
-            {
-              "name": "userId",
-              "description": "The unique identifier of the user, corresponding to their Firebase Authentication UID."
-            }
-          ]
+          "schema": { "$ref": "#/backend/entities/User" },
+          "description": "User profile data."
         }
       },
       {
-        "path": "/moods/{moodId}",
+        "path": "/doctorProfiles/{profileId}",
         "definition": {
-          "entityName": "Mood",
-          "schema": {
-            "$ref": "#/backend/entities/Mood"
-          },
-          "description": "Contains predefined, global mood categories available to all users. This collection is publicly readable and managed by the backend/admin.",
-          "params": [
-            {
-              "name": "moodId",
-              "description": "The unique identifier for a specific mood category."
-            }
-          ]
+          "entityName": "DoctorProfile",
+          "schema": { "$ref": "#/backend/entities/DoctorProfile" },
+          "description": "Public doctor profile data."
         }
       },
       {
-        "path": "/moodGuideResponseTemplates/{templateId}",
+        "path": "/assignments/{assignmentId}",
         "definition": {
-          "entityName": "MoodGuideResponseTemplate",
-          "schema": {
-            "$ref": "#/backend/entities/MoodGuideResponseTemplate"
-          },
-          "description": "Holds pre-defined supportive messages and practical suggestions associated with different moods. This collection is publicly readable and managed by the backend/admin, allowing for variety in daily guide responses. Includes a 'moodId' field for linking to a specific mood for retrieval, but not for authorization.",
-          "params": [
-            {
-              "name": "templateId",
-              "description": "The unique identifier for a specific mood guide response template."
-            }
-          ]
+          "entityName": "Assignment",
+          "schema": { "$ref": "#/backend/entities/Assignment" },
+          "description": "Patient-doctor consultation requests."
         }
       },
       {
-        "path": "/users/{userId}/userMoodEntries/{entryDate}",
+        "path": "/doctorNotes/{noteId}",
+        "definition": {
+          "entityName": "DoctorNote",
+          "schema": { "$ref": "#/backend/entities/DoctorNote" },
+          "description": "Private clinical notes."
+        }
+      },
+      {
+        "path": "/users/{userId}/moodEntries/{entryId}",
         "definition": {
           "entityName": "UserMoodEntry",
-          "schema": {
-            "$ref": "#/backend/entities/UserMoodEntry"
-          },
-          "description": "Records a user's daily mood check-in. The document ID (`entryDate` in YYYY-MM-DD format) is used to enforce the 'one entry per day' rule. Access is restricted to the owning user (`userId` from the path). Includes denormalized 'selectedMessage' and 'selectedSuggestion' fields for historical accuracy.",
-          "params": [
-            {
-              "name": "userId",
-              "description": "The unique identifier of the user who made this mood entry."
-            },
-            {
-              "name": "entryDate",
-              "description": "The specific date (YYYY-MM-DD) of the mood entry, serving as the document ID to enforce uniqueness per day per user."
-            }
-          ]
+          "schema": { "$ref": "#/backend/entities/UserMoodEntry" },
+          "description": "User daily mood entries."
+        }
+      },
+      {
+        "path": "/posts/{postId}",
+        "definition": {
+          "entityName": "Post",
+          "schema": { "$ref": "#/backend/entities/Post" },
+          "description": "Public community posts."
+        }
+      },
+      {
+        "path": "/posts/{postId}/likes/{userId}",
+        "definition": {
+          "entityName": "Like",
+          "schema": { "$ref": "#/backend/entities/Like" },
+          "description": "Likes on posts."
         }
       }
-    ],
-    "reasoning": "The proposed Firestore structure prioritizes Authorization Independence, Structural Segregation, and clear Access Modeling to ensure robust security rules and efficient data access. \n\n**Authorization Independence (CRITICAL):**\n\n1.  **User-Owned Data (`/users/{userId}/userMoodEntries/{entryDate}`):** Authorization is achieved by embedding the `userId` directly into the path. This allows Firestore security rules to directly compare `request.auth.uid` with the `{userId}` wildcard in the path for all read/write operations on a user's mood entries. This eliminates the need for `get()` calls to a parent document or to check the `userId` field within the `UserMoodEntry` document itself for authorization, thereby maintaining atomic operations (transactions/batches) and simplifying rule logic. The `entryDate` as the document ID further aids in enforcing the 'one entry per day' rule directly within security rules, enhancing both data integrity and authorization. For example, a create rule can easily verify `request.resource.id == request.time.toDate('YYYY-MM-DD')`.\n\n2.  **Global Data (`/moods/{moodId}`, `/moodGuideResponseTemplates/{templateId}`):** These collections store static, publicly readable data. Since their security posture is uniform (read-only for all authenticated users, write for backend/admin only), no complex authorization logic or denormalization is required, ensuring maximum independence and simplicity.\n\n**QAPs (Rules are not Filters):**\n\n1.  **Global Collections (`/moods`, `/moodGuideResponseTemplates`):** All documents within these collections share the same security requirements (publicly readable). Therefore, `list` operations are inherently secure as they do not require client-side filtering and the rules permit access to all documents uniformly.\n\n2.  **User-Specific Collection (`/users/{userId}/userMoodEntries`):** The hierarchical path structure ensures that `list` operations are secure. When a user queries their mood history, the query path will include their specific `userId` (e.g., `/users/ABC123/userMoodEntries`). The security rules will then enforce that `userId == request.auth.uid`, effectively pre-filtering the access to only the authenticated user's data. This allows for efficient and secure `list` queries without violating the 'rules are not filters' principle, as the path itself acts as a principal filter enforced by the security rules.\n\n**Structural Segregation:**\n\n*   User-private data (`userMoodEntries`) is strictly segregated under `/users/{userId}/`. \n*   Global, public data (`moods`, `moodGuideResponseTemplates`) resides in top-level collections.\n\nThis segregation ensures that each collection has a homogeneous security posture, leading to simpler, more readable, and less error-prone security rules. The design avoids mixing different access requirements within the same collection."
+    ]
   }
 }

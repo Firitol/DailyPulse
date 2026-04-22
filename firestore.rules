@@ -1,11 +1,114 @@
-
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Completely open rules for development to prevent any permission errors.
-    // Triggering a fresh deployment to resolve potential backend conflicts (409).
-    match /{document=**} {
-      allow read, write: if true;
+
+    /**
+     * DailyPulse Security Rules
+     *
+     * Core Philosophy:
+     * This ruleset enforces a strict user-ownership model for personal data and a public 
+     * read-only model for global reference data. Authorization is primarily driven by 
+     * the document path (UID-based hierarchy), which allows for efficient and secure 
+     * list operations without complex filtering logic.
+     *
+     * Data Structure:
+     * - /users/{userId}: Private user profile documents.
+     * - /users/{userId}/userMoodEntries/{entryDate}: Private daily logs, scoped to the user.
+     * - /moods/{moodId}: Global, public reference data for mood categories.
+     * - /moodGuideResponseTemplates/{templateId}: Global, public reference data for suggestions.
+     *
+     * Key Security Decisions:
+     * 1. Path-Based Authorization: All user-specific data is nested under the user's UID. 
+     *    This ensures that simply knowing a path guarantees ownership.
+     * 2. Relational Integrity: On creation of user-owned documents, the rules enforce 
+     *    that internal 'userId' fields match the authenticated user's UID.
+     * 3. Immutability: Ownership fields (like userId) are made immutable after creation 
+     *    to prevent data from being "re-assigned" to different users.
+     * 4. Public Reference: System-wide collections (moods/templates) are readable by anyone 
+     *    but writable by none (reserved for administrative actions).
+     */
+
+    /**
+     * STEP 1: Analysis & Synthesis
+     * 1. Path: /users/{userId} -> Pattern: Ownership / Self-Creation.
+     * 2. Path: /moods/{moodId} -> Pattern: Public Read with Admin-Only Writes.
+     * 3. Path: /moodGuideResponseTemplates/{templateId} -> Pattern: Public Read with Admin-Only Writes.
+     * 4. Path: /users/{userId}/userMoodEntries/{entryDate} -> Pattern: Ownership.
+     *
+     * Ambiguities: The IR mentions 'anonymous' and 'password' auth. All rules rely 
+     * on request.auth.uid regardless of the provider.
+     */
+
+    // --- Helper Functions ---
+
+    /** @description Checks if the request is from an authenticated user. */
+    function isSignedIn() {
+      return request.auth != null;
     }
+
+    /** @description Checks if the authenticated user's UID matches the provided userId. */
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    /** @description Combines ownership check with existence check for updates and deletes. */
+    function isExistingOwner(userId) {
+      return resource != null && isOwner(userId);
+    }
+
+    // --- Collection Rules ---
+
+    /**
+     * @description Rules for the User profile document.
+     * @path /users/{userId}
+     * @allow (create) if authenticated UID matches the document ID and data.id.
+     * @deny (update) if attempting to change the document's internal ID.
+     * @principle Enforces self-creation and ownership of the root user profile.
+     */
+    match /users/{userId} {
+      allow get, list: if isOwner(userId);
+      allow create: if isOwner(userId) && request.resource.data.id == userId;
+      allow update: if isExistingOwner(userId) && request.resource.data.id == resource.data.id;
+      allow delete: if isExistingOwner(userId);
+    }
+
+    /**
+     * @description Rules for global mood categories.
+     * @path /moods/{moodId}
+     * @allow (get) for any visitor (public read).
+     * @deny (write) for all users; managed via admin/backend.
+     * @principle Provides public access to reference data while preventing unauthorized modification.
+     */
+    match /moods/{moodId} {
+      allow get, list: if true;
+      allow create, update, delete: if false;
+    }
+
+    /**
+     * @description Rules for global mood response templates.
+     * @path /moodGuideResponseTemplates/{templateId}
+     * @allow (get) for any visitor (public read).
+     * @deny (write) for all users; managed via admin/backend.
+     * @principle Provides public access to system-defined content templates.
+     */
+    match /moodGuideResponseTemplates/{templateId} {
+      allow get, list: if true;
+      allow create, update, delete: if false;
+    }
+
+    /**
+     * @description Rules for a user's daily mood entries.
+     * @path /users/{userId}/userMoodEntries/{entryDate}
+     * @allow (create) if the user owns the path and sets userId correctly in data.
+     * @deny (list) if a user attempts to query another user's mood history.
+     * @principle Uses path-based ownership to secure private historical data.
+     */
+    match /users/{userId}/userMoodEntries/{entryDate} {
+      allow get, list: if isOwner(userId);
+      allow create: if isOwner(userId) && request.resource.data.userId == userId;
+      allow update: if isExistingOwner(userId) && request.resource.data.userId == resource.data.userId;
+      allow delete: if isExistingOwner(userId);
+    }
+
   }
 }

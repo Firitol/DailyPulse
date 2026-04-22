@@ -43,7 +43,7 @@ export interface FirebaseServicesAndUser {
 }
 
 // Return type for useUser() - specific to user auth state
-export interface UserHookResult {
+export interface UserHookResult { // Renamed from UserAuthHookResult for consistency if desired, or keep as UserAuthHookResult
   user: User | null;
   isUserLoading: boolean;
   userError: Error | null;
@@ -113,7 +113,7 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
 
 /**
  * Hook to access core Firebase services and user authentication state.
- * Returns the current context, allowing services to be null during SSR/initial hydration.
+ * Throws error if core services are not available or used outside provider.
  */
 export const useFirebase = (): FirebaseServicesAndUser => {
   const context = useContext(FirebaseContext);
@@ -122,12 +122,14 @@ export const useFirebase = (): FirebaseServicesAndUser => {
     throw new Error('useFirebase must be used within a FirebaseProvider.');
   }
 
-  // We return the context casting services to their non-nullable counterparts.
-  // Callers MUST handle the fact that services might be null during SSR.
+  if (!context.areServicesAvailable || !context.firebaseApp || !context.firestore || !context.auth) {
+    throw new Error('Firebase core services not available. Check FirebaseProvider props.');
+  }
+
   return {
-    firebaseApp: context.firebaseApp as FirebaseApp,
-    firestore: context.firestore as Firestore,
-    auth: context.auth as Auth,
+    firebaseApp: context.firebaseApp,
+    firestore: context.firestore,
+    auth: context.auth,
     user: context.user,
     isUserLoading: context.isUserLoading,
     userError: context.userError,
@@ -166,15 +168,9 @@ export function useMemoFirebase<T>(factory: () => T, deps: DependencyList): T | 
 /**
  * Hook specifically for accessing the authenticated user's state.
  * This provides the User object, loading status, and any auth errors.
+ * @returns {UserHookResult} Object with user, isUserLoading, userError.
  */
-export const useUser = (): UserHookResult => {
-  const context = useContext(FirebaseContext);
-  if (context === undefined) {
-    throw new Error('useUser must be used within a FirebaseProvider.');
-  }
-  return { 
-    user: context.user, 
-    isUserLoading: context.isUserLoading, 
-    userError: context.userError 
-  };
+export const useUser = (): UserHookResult => { // Renamed from useAuthUser
+  const { user, isUserLoading, userError } = useFirebase(); // Leverages the main hook
+  return { user, isUserLoading, userError };
 };

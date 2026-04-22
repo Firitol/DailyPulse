@@ -1,28 +1,39 @@
-
 'use client';
 
-import { useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError } from '@/firebase/errors';
 
 /**
- * Silenced listener to prevent error reporting as requested.
- * This component remains registered in the provider but no longer logs
- * or reacts to permission errors, providing a completely silent experience.
+ * An invisible component that listens for globally emitted 'permission-error' events.
+ * It throws any received error to be caught by Next.js's global-error.tsx.
  */
 export function FirebaseErrorListener() {
+  // Use the specific error type for the state for type safety.
+  const [error, setError] = useState<FirestorePermissionError | null>(null);
+
   useEffect(() => {
-    // No-op: We are ignoring all emitted permission errors to prevent console noise
-    // and potential development overlays as requested by the user.
-    const handleError = () => {
-      // Intentionally empty to silence errors
+    // The callback now expects a strongly-typed error, matching the event payload.
+    const handleError = (error: FirestorePermissionError) => {
+      // Set error in state to trigger a re-render.
+      setError(error);
     };
 
+    // The typed emitter will enforce that the callback for 'permission-error'
+    // matches the expected payload type (FirestorePermissionError).
     errorEmitter.on('permission-error', handleError);
 
+    // Unsubscribe on unmount to prevent memory leaks.
     return () => {
       errorEmitter.off('permission-error', handleError);
     };
   }, []);
 
+  // On re-render, if an error exists in state, throw it.
+  if (error) {
+    throw error;
+  }
+
+  // This component renders nothing.
   return null;
 }

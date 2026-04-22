@@ -1,4 +1,3 @@
-
 'use server';
 /**
  * @fileOverview A flow for generating breathing guide audio using TTS.
@@ -40,7 +39,7 @@ const generateBreathingAudioFlow = ai.defineFlow(
         responseModalities: ['AUDIO'],
         speechConfig: {
           voiceConfig: {
-            prebuiltVoiceConfig: { voiceName: 'Algenib' },
+            prebuiltVoiceConfig: { voiceName: 'Pherkad' }, // Soft female meditation-style voice
           },
         },
       },

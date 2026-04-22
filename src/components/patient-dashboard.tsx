@@ -1,4 +1,3 @@
-
 "use client"
 
 import React, { useState, useEffect } from 'react';
@@ -37,6 +36,7 @@ export function PatientDashboard({ profile }: { profile: UserProfile }) {
   const auth = useAuth();
   const { toast } = useToast();
 
+  const [activeTab, setActiveTab] = useState('dashboard');
   const [isCheckingIn, setIsCheckingIn] = useState(false);
   const [showTour, setShowTour] = useState(false);
   const [searchDoctor, setSearchDoctor] = useState('');
@@ -145,9 +145,13 @@ export function PatientDashboard({ profile }: { profile: UserProfile }) {
     <main className="min-h-screen bg-background relative">
       <nav className="sticky top-0 z-50 w-full border-b bg-white/80 backdrop-blur-md">
         <div className="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
-          <h1 className="text-xl font-bold text-primary flex items-center gap-2">
-            <span className="bg-primary text-white p-1 rounded-lg">DP</span> {t.appTitle}
-          </h1>
+          <button 
+            onClick={() => setActiveTab('dashboard')}
+            className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+          >
+            <span className="bg-primary text-white p-1 rounded-lg font-bold">DP</span>
+            <h1 className="text-xl font-bold text-primary">{t.appTitle}</h1>
+          </button>
           <div className="flex items-center gap-2">
             <LanguageToggle />
             <Button variant="ghost" size="icon" onClick={() => setShowTour(true)} className="rounded-full">
@@ -163,7 +167,7 @@ export function PatientDashboard({ profile }: { profile: UserProfile }) {
       <div className="max-w-4xl mx-auto px-4 py-8 space-y-8 pb-24">
         {profile && user && <OnboardingTour userId={user.uid} isOpen={showTour} onClose={() => setShowTour(false)} />}
 
-        <Tabs defaultValue="dashboard" className="w-full">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid w-full grid-cols-3 sm:flex sm:flex-wrap mb-8 bg-muted/50 rounded-full sm:rounded-2xl p-1 h-auto sm:h-12">
             <TabsTrigger value="dashboard" className="rounded-full gap-2"><LayoutDashboard className="h-4 w-4" /> <span className="hidden sm:inline">Home</span></TabsTrigger>
             <TabsTrigger value="tools" className="rounded-full gap-2"><Wind className="h-4 w-4" /> <span className="hidden sm:inline">Tools</span></TabsTrigger>
@@ -207,7 +211,7 @@ export function PatientDashboard({ profile }: { profile: UserProfile }) {
             </section>
 
             <section className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <Card className="border-none shadow-sm bg-primary/5 hover:bg-primary/10 transition-colors cursor-pointer" onClick={() => {}}>
+              <Card className="border-none shadow-sm bg-primary/5 hover:bg-primary/10 transition-colors cursor-pointer" onClick={() => setActiveTab('tips')}>
                 <CardContent className="p-6 flex items-center gap-4">
                   <div className="bg-primary text-white p-3 rounded-2xl"><BookOpen className="h-6 w-6" /></div>
                   <div>
@@ -216,7 +220,7 @@ export function PatientDashboard({ profile }: { profile: UserProfile }) {
                   </div>
                 </CardContent>
               </Card>
-              <Card className="border-none shadow-sm bg-secondary/5 hover:bg-secondary/10 transition-colors cursor-pointer" onClick={() => {}}>
+              <Card className="border-none shadow-sm bg-secondary/5 hover:bg-secondary/10 transition-colors cursor-pointer" onClick={() => setActiveTab('tools')}>
                 <CardContent className="p-6 flex items-center gap-4">
                   <div className="bg-secondary text-white p-3 rounded-2xl"><Wind className="h-6 w-6" /></div>
                   <div>

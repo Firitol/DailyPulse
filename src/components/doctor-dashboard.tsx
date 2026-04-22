@@ -1,4 +1,3 @@
-
 "use client"
 
 import React, { useState } from 'react';
@@ -84,14 +83,16 @@ export function DoctorDashboard({ profile }: { profile: UserProfile }) {
     <main className="min-h-screen bg-background">
       <nav className="sticky top-0 z-50 w-full border-b bg-white/80 backdrop-blur-md">
         <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <h1 className="text-xl font-bold text-primary flex items-center gap-2">
-              <span className="bg-primary text-white p-1 rounded-lg">DP</span> {t.appTitle}
-            </h1>
+          <button 
+            onClick={() => setSelectedPatientId(null)}
+            className="flex items-center gap-3 hover:opacity-80 transition-opacity"
+          >
+            <span className="bg-primary text-white p-1 rounded-lg font-bold">DP</span>
+            <h1 className="text-xl font-bold text-primary">{t.appTitle}</h1>
             <span className="hidden sm:inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
               Medical Professional
             </span>
-          </div>
+          </button>
           <div className="flex items-center gap-4">
             <p className="text-sm font-medium hidden md:block">Dr. {profile?.name || 'User'}</p>
             <Button variant="ghost" size="icon" onClick={() => auth.signOut()} className="rounded-full">

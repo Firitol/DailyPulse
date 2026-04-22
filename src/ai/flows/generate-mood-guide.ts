@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview This file defines a Genkit flow for generating a daily mood guide.
@@ -33,7 +34,7 @@ const prompt = ai.definePrompt({
   name: 'generateMoodGuidePrompt',
   input: {schema: GenerateMoodGuideInputSchema},
   output: {schema: GenerateMoodGuideOutputSchema},
-  prompt: `You are a compassionate and helpful AI assistant designed to provide daily mood guidance for a mental wellness app called DailyPulse.
+  prompt: `You are a compassionate and helpful AI assistant designed to provide daily mood guidance for a mental wellness app called ReliefZone.
 
 Based on the user's selected mood, provide a short, supportive message and one to two practical, personalized suggestions. The suggestions should be actionable and relevant to the mood. Ensure the messages and suggestions feel fresh and non-repetitive over time.
 

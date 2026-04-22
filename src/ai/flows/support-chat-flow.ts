@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview This file defines a Genkit flow for a supportive mental wellness chatbot.
@@ -32,7 +33,7 @@ const prompt = ai.definePrompt({
   name: 'supportChatPrompt',
   input: {schema: SupportChatInputSchema},
   output: {schema: SupportChatOutputSchema},
-  prompt: `You are a compassionate, empathetic, and supportive AI assistant for DailyPulse, a mental wellness app.
+  prompt: `You are a compassionate, empathetic, and supportive AI assistant for ReliefZone, a mental wellness app.
 Your goal is to listen to the user, validate their feelings, and provide gentle, actionable wellness advice. 
 
 Guidelines:

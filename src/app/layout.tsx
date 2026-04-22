@@ -1,3 +1,4 @@
+
 import type { Metadata, Viewport } from "next";
 import { Inter } from 'next/font/google';
 import "./globals.css";
@@ -7,13 +8,13 @@ import { FirebaseClientProvider } from "@/firebase/client-provider";
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter', display: 'swap' });
 
 export const metadata: Metadata = {
-  title: "DailyPulse | Mental Wellness Companion",
+  title: "ReliefZone | Mental Wellness Companion",
   description: "Your daily companion for mood tracking and emotional wellness.",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "DailyPulse",
+    title: "ReliefZone",
   },
   formatDetection: {
     telephone: false,

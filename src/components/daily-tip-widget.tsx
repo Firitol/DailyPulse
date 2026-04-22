@@ -26,7 +26,7 @@ export function DailyTipWidget() {
             <Sparkles className="h-5 w-5" />
           </div>
           <div className="space-y-1 flex-1">
-            <h4 className="text-xs font-bold uppercase tracking-widest text-primary/70">DailyPulse Insight</h4>
+            <h4 className="text-xs font-bold uppercase tracking-widest text-primary/70">ReliefZone Insight</h4>
             <div className="relative">
               <Quote className="absolute -left-2 -top-1 h-3 w-3 opacity-20 text-primary" />
               <p className="text-lg font-medium italic leading-relaxed pl-2">

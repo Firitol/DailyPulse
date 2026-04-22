@@ -80,6 +80,9 @@ export const dictionaries = {
     reframerAlternative: "What is a more balanced thought?",
     saveReframing: "Save Reframing",
     wellnessTips: "DailyPulse Guidance",
+    enableVoice: "Enable Voice Guide",
+    disableVoice: "Disable Voice Guide",
+    loadingVoice: "Preparing voice...",
   },
   om: {
     appTitle: "DailyPulse",
@@ -147,6 +150,9 @@ export const dictionaries = {
     journal: "Galmee Guyyaa",
     saveJournal: "Galmeessi",
     wellnessTips: "Gorsa DailyPulse",
+    enableVoice: "Qajeelfama Sagalee Banu",
+    disableVoice: "Qajeelfama Sagalee Cufi",
+    loadingVoice: "Sagalee qopheessaa...",
   },
   am: {
     appTitle: "DailyPulse",
@@ -214,5 +220,8 @@ export const dictionaries = {
     journal: "የዕለት ማስታወሻ",
     saveJournal: "መዝግብ",
     wellnessTips: "የDailyPulse ምክሮች",
+    enableVoice: "የድምጽ መመሪያን አግብር",
+    disableVoice: "የድምጽ መመሪያን አጥፋ",
+    loadingVoice: "ድምጽ በመዘጋጀት ላይ...",
   },
 };

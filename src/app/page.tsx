@@ -1,14 +1,14 @@
+
 "use client"
 
-import React, { useEffect } from 'react';
-import { useUser, useFirestore, useDoc } from '@/firebase';
+import React from 'react';
+import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import { UserProfile } from '@/lib/types';
 import { AuthForm } from '@/components/auth-form';
 import { Toaster } from '@/components/ui/toaster';
 import { LanguageToggle } from '@/components/language-toggle';
 import { useLanguage } from '@/lib/i18n/context';
-import { useMemoFirebase } from '@/firebase';
 import { Skeleton } from '@/components/ui/skeleton';
 import { PatientDashboard } from '@/components/patient-dashboard';
 import { DoctorDashboard } from '@/components/doctor-dashboard';
@@ -19,7 +19,6 @@ export default function DailyPulse() {
   const db = useFirestore();
 
   // Fetch user profile to determine role
-  // Added !db guard to prevent crashing during SSR
   const userDocRef = useMemoFirebase(() => (user && db) ? doc(db, 'users', user.uid) : null, [db, user]);
   const { data: profile, isLoading: isProfileLoading } = useDoc<UserProfile>(userDocRef);
 
@@ -50,12 +49,24 @@ export default function DailyPulse() {
     );
   }
 
+  // Ensure profile is available before rendering dashboards to prevent crashers
+  if (!profile) {
+    return (
+      <div className="flex items-center justify-center h-screen bg-background">
+        <div className="text-center space-y-4">
+          <Skeleton className="h-12 w-48 mx-auto" />
+          <p className="text-muted-foreground animate-pulse">Initializing your session...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <>
-      {profile?.role === 'doctor' ? (
+      {profile.role === 'doctor' ? (
         <DoctorDashboard profile={profile} />
       ) : (
-        <PatientDashboard profile={profile as UserProfile} />
+        <PatientDashboard profile={profile} />
       )}
       <Toaster />
     </>

@@ -1,9 +1,9 @@
+
 "use client"
 
 import React, { useState, useEffect } from 'react';
 import { useUser, useFirestore, useCollection, useAuth, useMemoFirebase, setDocumentNonBlocking } from '@/firebase';
 import { collection, query, orderBy, limit, doc } from 'firebase/firestore';
-import { isToday, parseISO } from 'date-fns';
 import { MoodType, MoodEntry, UserProfile, Assignment, DoctorProfile, DoctorNote } from '@/lib/types';
 import { MoodSelector } from '@/components/mood-selector';
 import { MoodResult } from '@/components/mood-result';
@@ -35,6 +35,12 @@ export function PatientDashboard({ profile }: { profile: UserProfile }) {
   const [isCheckingIn, setIsCheckingIn] = useState(false);
   const [showTour, setShowTour] = useState(false);
   const [searchDoctor, setSearchDoctor] = useState('');
+  const [todayStr, setTodayStr] = useState<string | null>(null);
+
+  // Set today's date string on the client only to avoid hydration mismatch
+  useEffect(() => {
+    setTodayStr(new Date().toISOString().split('T')[0]);
+  }, []);
 
   const moodsQuery = useMemoFirebase(() => {
     if (!user || !db) return null;
@@ -60,9 +66,7 @@ export function PatientDashboard({ profile }: { profile: UserProfile }) {
   }, [db, user]);
   const { data: rawDoctorNotes } = useCollection<DoctorNote>(notesQuery);
 
-  // Use string comparison for safer "today" check to avoid timezone shifts
-  const todayStr = new Date().toISOString().split('T')[0];
-  const todayEntry = entries?.find(e => e.date === todayStr);
+  const todayEntry = todayStr ? entries?.find(e => e.date === todayStr) : null;
   
   const assignments = rawAssignments?.filter(a => a.patientId === user?.uid);
   const myAssignment = assignments?.find(a => a.status === 'accepted');
@@ -76,7 +80,7 @@ export function PatientDashboard({ profile }: { profile: UserProfile }) {
   }, [profile]);
 
   const handleMoodSelect = async (mood: MoodType) => {
-    if (!user || !db || isCheckingIn) return;
+    if (!user || !db || isCheckingIn || !todayStr) return;
     
     setIsCheckingIn(true);
     try {
@@ -164,7 +168,7 @@ export function PatientDashboard({ profile }: { profile: UserProfile }) {
 
           <TabsContent value="dashboard" className="space-y-10">
             <header className="space-y-2">
-              <h2 className="text-3xl font-bold">Hello, {user?.displayName?.split(' ')[0]}</h2>
+              <h2 className="text-3xl font-bold">Hello, {user?.displayName?.split(' ')[0] || 'User'}</h2>
               <p className="text-muted-foreground">{t.tagline}</p>
             </header>
 

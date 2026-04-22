@@ -1,3 +1,4 @@
+
 "use client"
 
 import React, { useState } from 'react';
@@ -64,12 +65,13 @@ export function DoctorDashboard({ profile }: { profile: UserProfile }) {
   const { data: doctorNotes } = useCollection<DoctorNote>(notesQuery);
 
   const handleAssignmentStatus = (id: string, status: 'accepted' | 'rejected') => {
+    if (!db) return;
     updateDocumentNonBlocking(doc(db, 'assignments', id), { status });
     toast({ title: `Consultation ${status}` });
   };
 
   const handleAddNote = () => {
-    if (!selectedPatientId || !user || !noteContent.trim()) return;
+    if (!selectedPatientId || !user || !noteContent.trim() || !db) return;
     const noteId = crypto.randomUUID();
     setDocumentNonBlocking(doc(db, 'doctorNotes', noteId), {
       id: noteId,
@@ -95,7 +97,7 @@ export function DoctorDashboard({ profile }: { profile: UserProfile }) {
             </span>
           </div>
           <div className="flex items-center gap-4">
-            <p className="text-sm font-medium hidden md:block">Dr. {profile.name}</p>
+            <p className="text-sm font-medium hidden md:block">Dr. {profile?.name || 'User'}</p>
             <Button variant="ghost" size="icon" onClick={() => auth.signOut()} className="rounded-full">
               <LogOut className="h-5 w-5" />
             </Button>
@@ -118,10 +120,10 @@ export function DoctorDashboard({ profile }: { profile: UserProfile }) {
                   >
                     <Avatar className="h-8 w-8">
                       <AvatarImage src={p?.avatarUrl} />
-                      <AvatarFallback>{p?.name[0]}</AvatarFallback>
+                      <AvatarFallback>{p?.name?.[0] || 'P'}</AvatarFallback>
                     </Avatar>
                     <div className="text-left overflow-hidden">
-                      <p className="font-medium truncate text-sm">{p?.name}</p>
+                      <p className="font-medium truncate text-sm">{p?.name || 'Patient'}</p>
                     </div>
                   </button>
                 );
@@ -140,9 +142,9 @@ export function DoctorDashboard({ profile }: { profile: UserProfile }) {
                     <div className="flex items-center gap-3">
                        <Avatar className="h-8 w-8">
                         <AvatarImage src={p?.avatarUrl} />
-                        <AvatarFallback>{p?.name[0]}</AvatarFallback>
+                        <AvatarFallback>{p?.name?.[0] || 'P'}</AvatarFallback>
                       </Avatar>
-                      <p className="font-medium text-xs truncate">{p?.name}</p>
+                      <p className="font-medium text-xs truncate">{p?.name || 'Patient'}</p>
                     </div>
                     <div className="flex gap-2">
                       <Button size="sm" onClick={() => handleAssignmentStatus(r.id, 'accepted')} className="flex-1 h-8 text-[10px]"><Check className="h-3 w-3 mr-1" /> Accept</Button>
@@ -163,10 +165,10 @@ export function DoctorDashboard({ profile }: { profile: UserProfile }) {
                 <div className="flex items-center gap-4">
                   <Avatar className="h-16 w-16 border-4 border-primary/10">
                     <AvatarImage src={selectedPatient.avatarUrl} />
-                    <AvatarFallback className="text-2xl">{selectedPatient.name[0]}</AvatarFallback>
+                    <AvatarFallback className="text-2xl">{selectedPatient.name?.[0] || 'P'}</AvatarFallback>
                   </Avatar>
                   <div>
-                    <h2 className="text-2xl font-bold">{selectedPatient.name}</h2>
+                    <h2 className="text-2xl font-bold">{selectedPatient.name || 'Patient'}</h2>
                     <p className="text-sm text-muted-foreground">{selectedPatient.email}</p>
                   </div>
                 </div>

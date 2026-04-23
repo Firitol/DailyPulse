@@ -4,6 +4,7 @@ import "./globals.css";
 import { LanguageProvider } from "@/lib/i18n/context";
 import { FirebaseClientProvider } from "@/firebase/client-provider";
 import Script from "next/script";
+import { PwaInstallPrompt } from "@/components/pwa-install-prompt";
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter', display: 'swap' });
 
@@ -47,7 +48,10 @@ export default function RootLayout({
       </head>
       <body className="font-sans antialiased bg-background text-foreground min-h-screen">
         <FirebaseClientProvider>
-          <LanguageProvider>{children}</LanguageProvider>
+          <LanguageProvider>
+            {children}
+            <PwaInstallPrompt />
+          </LanguageProvider>
         </FirebaseClientProvider>
         <Script id="register-sw" strategy="afterInteractive">
           {`

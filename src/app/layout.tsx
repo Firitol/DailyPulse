@@ -1,9 +1,9 @@
-
 import type { Metadata, Viewport } from "next";
 import { Inter } from 'next/font/google';
 import "./globals.css";
 import { LanguageProvider } from "@/lib/i18n/context";
 import { FirebaseClientProvider } from "@/firebase/client-provider";
+import Script from "next/script";
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter', display: 'swap' });
 
@@ -18,6 +18,10 @@ export const metadata: Metadata = {
   },
   formatDetection: {
     telephone: false,
+  },
+  icons: {
+    icon: "/icon.svg",
+    apple: "/icon.svg",
   },
 };
 
@@ -45,6 +49,22 @@ export default function RootLayout({
         <FirebaseClientProvider>
           <LanguageProvider>{children}</LanguageProvider>
         </FirebaseClientProvider>
+        <Script id="register-sw" strategy="afterInteractive">
+          {`
+            if ('serviceWorker' in navigator) {
+              window.addEventListener('load', function() {
+                navigator.serviceWorker.register('/sw.js').then(
+                  function(registration) {
+                    console.log('Service Worker registration successful with scope: ', registration.scope);
+                  },
+                  function(err) {
+                    console.log('Service Worker registration failed: ', err);
+                  }
+                );
+              });
+            }
+          `}
+        </Script>
       </body>
     </html>
   );
